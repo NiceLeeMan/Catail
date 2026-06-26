@@ -1,0 +1,38 @@
+name: 이슈
+description: 작업 이슈 템플릿
+body:
+  - type: textarea
+    id: background
+    attributes:
+      label: 📌 작업 배경
+      description: 이 이슈를 만든 이유와 목적을 작성하시오.
+    validations:
+      required: true
+
+  - type: textarea
+    id: tasks
+    attributes:
+      label: ✅ 작업 목록
+      value: |
+        - [ ] 
+        - [ ] 
+        - [ ]
+    validations:
+      required: true
+
+  - type: input
+    id: start-date
+    attributes:
+      label: 📅 시작일
+      placeholder: YYYY-MM-DD
+
+  - type: input
+    id: end-date
+    attributes:
+      label: 📅 종료일
+      placeholder: YYYY-MM-DD
+
+  - type: textarea
+    id: note
+    attributes:
+      label: ※ 비고
