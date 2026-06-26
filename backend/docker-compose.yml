@@ -1,0 +1,10 @@
+services:
+  db:
+    image: postgres:16
+    container_name: catail-db
+    environment:
+      POSTGRES_DB: catail
+      POSTGRES_USER: catail
+      POSTGRES_PASSWORD: catail1234!
+    ports:
+      - "5432:5432"
