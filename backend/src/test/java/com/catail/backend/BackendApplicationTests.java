@@ -1,4 +1,4 @@
-package org.cathori.backend;
+package com.catail.backend;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;

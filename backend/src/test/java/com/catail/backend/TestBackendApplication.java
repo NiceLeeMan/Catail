@@ -1,4 +1,4 @@
-package org.cathori.backend;
+package com.catail.backend;
 
 import org.springframework.boot.SpringApplication;
 
