@@ -37,9 +37,6 @@ public class User {
     @Column(unique = true, length = 50)
     private String email;
 
-    @Column(name = "refresh_token", nullable = false, length = 255)
-    private String refreshToken;
-
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -55,14 +52,18 @@ public class User {
 
     @Builder
     public User(String nickname, OAuthProvider provider, String providerId,
-                String email, String refreshToken, UserRole role) {
+                String email, UserRole role) {
         this.nickname = nickname;
         this.provider = provider;
         this.providerId = providerId;
         this.email = email;
-        this.refreshToken = refreshToken;
         this.role = role;
         this.createdAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
     }
 }
