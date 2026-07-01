@@ -40,7 +40,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         userService.saveRefreshToken(userId, jti, expiresAt);
 
-        response.addCookie(buildCookie("refresh_token", refreshToken, (int) (refreshTokenExpiry / 1000L), "/api/auth/refresh"));
+        response.addCookie(buildCookie("refresh_token", refreshToken, (int) (refreshTokenExpiry / 1000L), "/api/auth"));
 
         getRedirectStrategy().sendRedirect(request, response, redirectUri + "?access_token=" + accessToken);
     }

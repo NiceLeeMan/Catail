@@ -53,7 +53,7 @@ public class AuthController {
 
         Cookie expired = new Cookie("refresh_token", "");
         expired.setMaxAge(0);
-        expired.setPath("/api/auth/refresh");
+        expired.setPath("/api/auth");
         expired.setHttpOnly(true);
         response.addCookie(expired);
 
@@ -73,7 +73,7 @@ public class AuthController {
         cookie.setHttpOnly(true);
         cookie.setSecure(false);
         cookie.setAttribute("SameSite", "Lax");
-        cookie.setPath("/api/auth/refresh");
+        cookie.setPath("/api/auth");
         cookie.setMaxAge((int) (refreshTokenExpiry / 1000L));
         return cookie;
     }
