@@ -1,0 +1,170 @@
+openapi: 3.0.3
+info:
+  title: Catail API
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:8080
+    description: 로컬 개발 서버
+
+tags:
+  - name: 인증
+    description: JWT 토큰 발급 / 갱신 / 로그아웃
+
+paths:
+  /oauth2/authorization/google:
+    get:
+      tags:
+        - 인증
+      summary: Google OAuth2 로그인
+      description: |
+        Spring Security가 제공하는 OAuth2 인증 시작점입니다.
+        브라우저에서 이 URL로 이동하면 Google 로그인 페이지로 리다이렉트됩니다.
+        로그인 성공 시 프론트엔드 리다이렉트 URI로 `?access_token=<JWT>` 쿼리 파라미터와 함께 이동하며,
+        응답에 `Set-Cookie: refresh_token=<RT>; HttpOnly` 가 포함됩니다.
+      responses:
+        '302':
+          description: Google 로그인 페이지로 리다이렉트
+
+  /api/auth/refresh:
+    post:
+      tags:
+        - 인증
+      summary: Access Token 재발급 (RTR)
+      description: |
+        HttpOnly 쿠키 `refresh_token`을 검증하고 새 Access Token과 갱신된 Refresh Token을 발급합니다.
+        Refresh Token Rotation(RTR)을 수행합니다 — 기존 토큰은 즉시 폐기됩니다.
+
+        **오류 케이스**
+        - 쿠키 없음 → 401
+        - JWT 서명 위조 → 401
+        - DB에 존재하지 않는 JTI → 401
+        - 이미 폐기된 JTI (탈취 감지) → 전체 세션 무효화 + 401
+        - DB expires_at 만료 → 전체 세션 무효화 + 401
+      parameters:
+        - in: cookie
+          name: refresh_token
+          required: true
+          schema:
+            type: string
+          description: 현재 유효한 Refresh Token (HttpOnly)
+      responses:
+        '200':
+          description: 재발급 성공
+          headers:
+            Set-Cookie:
+              description: 갱신된 Refresh Token (HttpOnly, Path=/api/auth/refresh)
+              schema:
+                type: string
+                example: refresh_token=<new-RT>; Path=/api/auth/refresh; HttpOnly
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccessTokenResponse'
+              example:
+                success: true
+                data:
+                  access_token: eyJhbGciOiJIUzI1NiJ9...
+                error: null
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+
+  /api/auth/logout:
+    post:
+      tags:
+        - 인증
+      summary: 로그아웃
+      description: |
+        HttpOnly 쿠키 `refresh_token`의 서명을 검증하고 해당 JTI를 폐기합니다.
+        **만료된 토큰으로도 로그아웃 가능합니다** (서명만 유효하면 됩니다).
+        성공 시 응답의 `Set-Cookie`로 쿠키를 즉시 삭제합니다.
+      parameters:
+        - in: cookie
+          name: refresh_token
+          required: true
+          schema:
+            type: string
+          description: 현재 Refresh Token — 만료되어도 허용 (HttpOnly)
+      responses:
+        '200':
+          description: 로그아웃 성공
+          headers:
+            Set-Cookie:
+              description: 쿠키 삭제 (MaxAge=0)
+              schema:
+                type: string
+                example: refresh_token=; Path=/api/auth/refresh; MaxAge=0; HttpOnly
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VoidResponse'
+              example:
+                success: true
+                data: null
+                error: null
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+
+components:
+  schemas:
+    AccessTokenResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            access_token:
+              type: string
+              description: Bearer 토큰으로 사용할 JWT
+        error:
+          type: object
+          nullable: true
+
+    VoidResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          nullable: true
+        error:
+          type: object
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        data:
+          type: object
+          nullable: true
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              example: GLOBAL_001
+            message:
+              type: string
+              example: 인증이 필요합니다
+
+  responses:
+    Unauthenticated:
+      description: 인증 실패 (토큰 없음 / 서명 위조 / 폐기된 토큰)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            data: null
+            error:
+              code: GLOBAL_001
+              message: 인증이 필요합니다
