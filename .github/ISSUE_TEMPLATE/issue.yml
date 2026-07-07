@@ -2,6 +2,14 @@ name: 이슈 템플릿
 description: 작업 이슈 템플릿
 body:
   - type: textarea
+    id: reference
+    attributes:
+      label: 📎 참조 문서
+      description: 이 작업이 근거하는 문서를 링크하시오. 참조 문서가 없는 경우 "없음"으로 명시.
+    validations:
+      required: true
+
+  - type: textarea
     id: background
     attributes:
       label: 📌 작업 배경
