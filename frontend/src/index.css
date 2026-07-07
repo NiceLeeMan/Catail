@@ -13,5 +13,17 @@
   --color-text-muted: #93a1bc;
   --color-border: #dce5f2;
 
+  --color-status-active: #10b981;
+  --color-status-active-bg: #d1fae5;
+  --color-status-paused: #f59e0b;
+  --color-status-paused-bg: #fef3c7;
+  --color-status-inactive: #94a3b8;
+  --color-status-inactive-bg: #f1f5f9;
+  --color-status-ended: #ef4444;
+  --color-status-ended-bg: #fee2e2;
+
+  --radius-card: 16px;
+  --shadow-card: 0px 2px 10px 0px #0e235014;
+
   --font-sans: 'Inter', system-ui, sans-serif;
 }

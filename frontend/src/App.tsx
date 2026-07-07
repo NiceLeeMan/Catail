@@ -4,6 +4,8 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
 import { HomePage } from './pages/HomePage';
+import { CatalystListPage } from './pages/CatalystListPage';
+import { MOCK_CATALYSTS } from './mocks/catalysts';
 
 function App() {
   return (
@@ -12,8 +14,10 @@ function App() {
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/auth/callback" element={<OAuthCallbackPage />} />
+          <Route path="/catalysts/demo" element={<CatalystListPage catalysts={MOCK_CATALYSTS} />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/catalysts" element={<CatalystListPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
