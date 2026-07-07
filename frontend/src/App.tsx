@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
 import { HomePage } from './pages/HomePage';
+import { CatalystListPage } from './pages/CatalystListPage';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
           <Route path="/auth/callback" element={<OAuthCallbackPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/catalysts" element={<CatalystListPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
