@@ -15,3 +15,12 @@ export interface Catalyst {
   pendingSignalCount: number;
   lastMonitoredAtLabel: string | null;
 }
+
+export interface CatalystListItemResponse {
+  id: number;
+  title: string;
+  status: CatalystStatus;
+  industryTags: string[];
+  pendingSignalCount: number;
+  createdAt: string; // ISO datetime string
+}

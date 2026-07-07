@@ -1,16 +1,12 @@
 import { useState } from 'react';
 import { ChevronDown, Plus } from 'lucide-react';
 import logo from '../asset/logo.png';
-import { CatalystCard } from '../components/catalyst/CatalystCard';
+import { CardGrid } from '../components/catalyst/CardGrid';
 import { Pagination } from '../components/catalyst/Pagination';
 import { EmptyState } from '../components/catalyst/EmptyState';
-import type { Catalyst } from '../types/catalyst';
-
-const PAGE_SIZE = 20;
-
-interface CatalystListPageProps {
-  catalysts?: Catalyst[];
-}
+import { CatalystListSkeleton } from '../components/catalyst/CatalystListSkeleton';
+import { CatalystListError } from '../components/catalyst/CatalystListError';
+import { useCatalystsQuery } from '../hooks/useCatalysts';
 
 function Header() {
   return (
@@ -50,14 +46,9 @@ function PageHeader({ count }: { count: number }) {
   );
 }
 
-export function CatalystListPage({ catalysts = [] }: CatalystListPageProps) {
+export function CatalystListPage() {
   const [currentPage, setCurrentPage] = useState(1);
-
-  const pagedCatalysts = catalysts.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE
-  );
-  const totalPages = Math.ceil(catalysts.length / PAGE_SIZE);
+  const { data, isLoading, isError } = useCatalystsQuery(currentPage);
 
   const handleCardClick = (id: number) => {
     console.log('catalyst clicked', id);
@@ -68,22 +59,26 @@ export function CatalystListPage({ catalysts = [] }: CatalystListPageProps) {
       <Header />
 
       <main className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-8 px-6 py-10">
-        <PageHeader count={catalysts.length} />
-
-        {catalysts.length === 0 ? (
-          <EmptyState />
+        {isLoading ? (
+          <CatalystListSkeleton />
+        ) : isError || !data ? (
+          <CatalystListError />
         ) : (
           <>
-            <div className="grid w-full grid-cols-2 gap-6">
-              {pagedCatalysts.map((catalyst) => (
-                <CatalystCard key={catalyst.id} {...catalyst} onClick={handleCardClick} />
-              ))}
-            </div>
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={setCurrentPage}
-            />
+            <PageHeader count={data.totalElements} />
+
+            {data.items.length === 0 ? (
+              <EmptyState />
+            ) : (
+              <>
+                <CardGrid catalysts={data.items} onCardClick={handleCardClick} />
+                <Pagination
+                  currentPage={currentPage}
+                  totalPages={data.totalPages}
+                  onPageChange={setCurrentPage}
+                />
+              </>
+            )}
           </>
         )}
       </main>
