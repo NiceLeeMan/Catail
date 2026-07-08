@@ -31,4 +31,10 @@ public class Industry {
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
+
+    public static Industry create(String name) {
+        Industry industry = new Industry();
+        industry.name = name;
+        return industry;
+    }
 }

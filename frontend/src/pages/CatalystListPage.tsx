@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { ChevronDown, Plus } from 'lucide-react';
-import logo from '../asset/logo.png';
+import { useNavigate } from 'react-router-dom';
+import { Plus } from 'lucide-react';
+import { AppHeader } from '../components/layout/AppHeader';
 import { CardGrid } from '../components/catalyst/CardGrid';
 import { Pagination } from '../components/catalyst/Pagination';
 import { EmptyState } from '../components/catalyst/EmptyState';
@@ -8,24 +9,7 @@ import { CatalystListSkeleton } from '../components/catalyst/CatalystListSkeleto
 import { CatalystListError } from '../components/catalyst/CatalystListError';
 import { useCatalystsQuery } from '../hooks/useCatalysts';
 
-function Header() {
-  return (
-    <header className="sticky top-0 z-10 box-border w-full border-b border-border bg-bg-surface">
-      <div className="mx-auto box-border flex h-16 w-full max-w-[1280px] items-center justify-between px-6">
-        <img src={logo} alt="Catail" className="h-8" />
-        <div className="box-border flex items-center gap-3">
-          <div className="box-border flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[13px] font-semibold text-primary">
-            KM
-          </div>
-          <span className="text-[14px] font-medium leading-normal text-text-primary">김민준</span>
-          <ChevronDown className="h-4 w-4 text-text-muted" />
-        </div>
-      </div>
-    </header>
-  );
-}
-
-function PageHeader({ count }: { count: number }) {
+function PageHeader({ count, onCreateClick }: { count: number; onCreateClick: () => void }) {
   return (
     <div className="box-border flex w-full items-center justify-between">
       <div className="box-border flex flex-col items-start gap-1">
@@ -36,7 +20,8 @@ function PageHeader({ count }: { count: number }) {
       </div>
       <button
         type="button"
-        className="box-border flex shrink-0 items-center gap-2 rounded-full px-5 py-3 text-[14px] font-semibold leading-normal text-white"
+        onClick={onCreateClick}
+        className="box-border flex shrink-0 items-center gap-2 rounded-full px-5 py-3 text-[14px] font-semibold leading-normal text-white transition hover:opacity-90 active:scale-95"
         style={{ backgroundImage: 'linear-gradient(90deg, #1F56E6 0%, #00D4B4 100%)' }}
       >
         <Plus className="h-4 w-4" />
@@ -47,6 +32,7 @@ function PageHeader({ count }: { count: number }) {
 }
 
 export function CatalystListPage() {
+  const navigate = useNavigate();
   const [currentPage, setCurrentPage] = useState(1);
   const { data, isLoading, isError } = useCatalystsQuery(currentPage);
 
@@ -56,7 +42,7 @@ export function CatalystListPage() {
 
   return (
     <div className="box-border flex min-h-screen w-full flex-col items-center bg-bg-base">
-      <Header />
+      <AppHeader />
 
       <main className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-8 px-6 py-10">
         {isLoading ? (
@@ -65,7 +51,7 @@ export function CatalystListPage() {
           <CatalystListError />
         ) : (
           <>
-            <PageHeader count={data.totalElements} />
+            <PageHeader count={data.totalElements} onCreateClick={() => navigate('/catalysts/new')} />
 
             {data.items.length === 0 ? (
               <EmptyState />

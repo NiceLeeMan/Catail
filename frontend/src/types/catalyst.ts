@@ -24,3 +24,19 @@ export interface CatalystListItemResponse {
   pendingSignalCount: number;
   createdAt: string; // ISO datetime string
 }
+
+export interface CreateCatalystPayload {
+  title: string;
+  content: string;
+  industryIds: number[];
+  status: 'ACTIVE' | 'INACTIVE';
+}
+
+export interface CatalystDetailResponse {
+  id: number;
+  title: string;
+  content: string;
+  status: CatalystStatus;
+  industryTags: string[];
+  createdAt: string; // ISO datetime string
+}
