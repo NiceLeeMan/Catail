@@ -5,6 +5,7 @@ import { LoginPage } from './pages/LoginPage';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
 import { HomePage } from './pages/HomePage';
 import { CatalystListPage } from './pages/CatalystListPage';
+import { CatalystCreatePage } from './pages/CatalystCreatePage';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/catalysts" element={<CatalystListPage />} />
+            <Route path="/catalysts/new" element={<CatalystCreatePage />} />
           </Route>
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
