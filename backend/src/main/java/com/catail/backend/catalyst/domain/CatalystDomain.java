@@ -21,10 +21,10 @@ public class CatalystDomain {
 
     private final Long id;
     private final Long userId;
-    private final String title;
-    private final String content;
+    private String title;
+    private String content;
     private CatalystStatus status;
-    private final List<Long> industryIds;
+    private List<Long> industryIds;
     private final List<String> searchConditions;
     private final int searchIntervalHours;
     private final LocalDateTime lastSearchedAt;
@@ -121,6 +121,12 @@ public class CatalystDomain {
             throw new BusinessException(GlobalErrorCode.INVALID_INPUT);
         }
         return status;
+    }
+
+    public void updateBasicInfo(String rawTitle, String rawContent, List<Long> industryIds) {
+        this.title = validateTitle(rawTitle);
+        this.content = validateContent(rawContent);
+        this.industryIds = validateIndustryIds(industryIds);
     }
 
     public void delete() {

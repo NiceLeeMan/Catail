@@ -4,7 +4,9 @@ import com.catail.backend.catalyst.application.CatalystCreateResponse;
 import com.catail.backend.catalyst.application.CatalystInfoResponse;
 import com.catail.backend.catalyst.application.CatalystListItemResponse;
 import com.catail.backend.catalyst.application.CatalystService;
+import com.catail.backend.catalyst.application.CatalystUpdateResponse;
 import com.catail.backend.catalyst.application.CreateCatalystRequest;
+import com.catail.backend.catalyst.application.UpdateCatalystBasicInfoRequest;
 import com.catail.backend.global.ApiResponse;
 import com.catail.backend.global.PageResponse;
 import com.catail.backend.global.web.CurrentUserId;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -65,5 +68,17 @@ public class CatalystController {
 
         catalystService.delete(id, userId);
         return ResponseEntity.ok(ApiResponse.ok());
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<CatalystUpdateResponse>> updateBasicInfo(
+            @CurrentUserId Long userId,
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateCatalystBasicInfoRequest request) {
+
+        CatalystUpdateResponse response = catalystService.updateBasicInfo(
+                id, userId, request.title(), request.content(), request.industryIds());
+
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }

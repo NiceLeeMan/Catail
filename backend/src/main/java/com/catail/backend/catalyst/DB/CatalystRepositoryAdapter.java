@@ -6,6 +6,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -72,6 +73,28 @@ public class CatalystRepositoryAdapter {
                 .orElseThrow(() -> new IllegalStateException("Catalyst not found: " + catalystId));
         entity.setStatus(newStatus);
         entity.delete();
+    }
+
+    public LocalDateTime persistBasicInfo(Long catalystId, String title, String content) {
+        Catalyst entity = catalystRepository.findById(catalystId)
+                .orElseThrow(() -> new IllegalStateException("Catalyst not found: " + catalystId));
+        entity.setTitle(title);
+        entity.setContent(content);
+        return catalystRepository.saveAndFlush(entity).getUpdatedAt();
+    }
+
+    public void replaceIndustries(Long catalystId, List<Long> industryIds) {
+        catalystIndustryRepository.deleteByCatalystId(catalystId);
+
+        List<CatalystIndustry> joins = industryIds.stream()
+                .map(industryId -> {
+                    CatalystIndustry join = new CatalystIndustry();
+                    join.setCatalystId(catalystId);
+                    join.setIndustryId(industryId);
+                    return join;
+                })
+                .toList();
+        catalystIndustryRepository.saveAll(joins);
     }
 
     private List<Long> industryIdsOf(Long catalystId) {

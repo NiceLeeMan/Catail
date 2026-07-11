@@ -196,6 +196,53 @@ class CatalystDomainTest {
     }
 
     @Nested
+    @DisplayName("updateBasicInfo")
+    class UpdateBasicInfo {
+
+        @Test
+        @DisplayName("유효한 값이면 title/content/industryIds가 모두 교체된다")
+        void updateBasicInfo_validValues_replacesFields() {
+            CatalystDomain domain = CatalystDomain.reconstruct(
+                    1L, 1L, "old title", "old content".repeat(5), CatalystStatus.ACTIVE, List.of(1L), List.of(), 4,
+                    null, null, LocalDateTime.now(), LocalDateTime.now(), null);
+
+            domain.updateBasicInfo("new title", "b".repeat(60), List.of(2L, 3L));
+
+            assertThat(domain.getTitle()).isEqualTo("new title");
+            assertThat(domain.getContent()).hasSize(60);
+            assertThat(domain.getIndustryIds()).containsExactly(2L, 3L);
+        }
+
+        @Test
+        @DisplayName("title이 유효하지 않으면 INVALID_INPUT 예외가 발생하고 기존 값은 유지된다")
+        void updateBasicInfo_invalidTitle_throwsInvalidInputAndKeepsOldValue() {
+            CatalystDomain domain = CatalystDomain.reconstruct(
+                    1L, 1L, "old title", "a".repeat(50), CatalystStatus.ACTIVE, List.of(1L), List.of(), 4,
+                    null, null, LocalDateTime.now(), LocalDateTime.now(), null);
+
+            assertThatThrownBy(() -> domain.updateBasicInfo("a".repeat(51), "a".repeat(50), List.of(1L)))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(GlobalErrorCode.INVALID_INPUT);
+
+            assertThat(domain.getTitle()).isEqualTo("old title");
+        }
+
+        @Test
+        @DisplayName("industryIds에 중복이 있으면 INVALID_INPUT 예외가 발생한다")
+        void updateBasicInfo_duplicateIndustryIds_throwsInvalidInput() {
+            CatalystDomain domain = CatalystDomain.reconstruct(
+                    1L, 1L, "title", "a".repeat(50), CatalystStatus.ACTIVE, List.of(1L), List.of(), 4,
+                    null, null, LocalDateTime.now(), LocalDateTime.now(), null);
+
+            assertThatThrownBy(() -> domain.updateBasicInfo("title", "a".repeat(50), List.of(1L, 1L)))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(GlobalErrorCode.INVALID_INPUT);
+        }
+    }
+
+    @Nested
     @DisplayName("isActive / isDeleted")
     class StatusChecks {
 

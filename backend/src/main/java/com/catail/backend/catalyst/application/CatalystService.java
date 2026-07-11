@@ -14,6 +14,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
 
@@ -86,6 +87,27 @@ public class CatalystService {
                 .orElseThrow(() -> new BusinessException(CatalystErrorCode.NOT_FOUND));
         domain.delete();
         catalystRepositoryAdapter.persistStatusAndDeletion(domain.getId(), domain.getStatus());
+    }
+
+    // UC-5: 기본정보 수정
+    @Transactional
+    public CatalystUpdateResponse updateBasicInfo(Long id, Long userId, String title, String content,
+                                                   List<Long> industryIds) {
+        CatalystDomain domain = catalystRepositoryAdapter.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new BusinessException(CatalystErrorCode.NOT_FOUND));
+
+        domain.updateBasicInfo(title, content, industryIds);
+
+        if (!catalystRepositoryAdapter.existsAllIndustries(domain.getIndustryIds())) {
+            throw new BusinessException(GlobalErrorCode.INVALID_INPUT);
+        }
+
+        LocalDateTime updatedAt = catalystRepositoryAdapter.persistBasicInfo(
+                domain.getId(), domain.getTitle(), domain.getContent());
+        catalystRepositoryAdapter.replaceIndustries(domain.getId(), domain.getIndustryIds());
+
+        List<String> industries = resolveIndustryNames(domain);
+        return new CatalystUpdateResponse(domain.getTitle(), domain.getContent(), industries, updatedAt);
     }
 
     private CatalystCreateResponse toCreateResponse(CatalystDomain domain) {
