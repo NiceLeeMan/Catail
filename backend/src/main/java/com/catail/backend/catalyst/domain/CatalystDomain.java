@@ -146,7 +146,9 @@ public class CatalystDomain {
     }
 
     public void delete() {
-        this.status = CatalystStatus.ENDED;
+        if (this.status != CatalystStatus.ENDED) {
+            changeStatus(CatalystStatus.ENDED);
+        }
         this.deletedAt = LocalDateTime.now();
     }
 

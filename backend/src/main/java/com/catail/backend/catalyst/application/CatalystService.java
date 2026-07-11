@@ -83,11 +83,12 @@ public class CatalystService {
 
     // UC-4: 삭제
     @Transactional
-    public void delete(Long id, Long userId) {
+    public CatalystDeleteResponse delete(Long id, Long userId) {
         CatalystDomain domain = catalystRepositoryAdapter.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new BusinessException(CatalystErrorCode.NOT_FOUND));
         domain.delete();
         catalystRepositoryAdapter.persistStatusAndDeletion(domain.getId(), domain.getStatus());
+        return new CatalystDeleteResponse(domain.getStatus().name(), domain.getDeletedAt());
     }
 
     // UC-5: 기본정보 수정

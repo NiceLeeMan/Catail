@@ -2,6 +2,7 @@ package com.catail.backend.catalyst.inbound;
 
 import com.catail.backend.catalyst.application.CatalystBasicInfo;
 import com.catail.backend.catalyst.application.CatalystCreateResponse;
+import com.catail.backend.catalyst.application.CatalystDeleteResponse;
 import com.catail.backend.catalyst.application.CatalystInfoResponse;
 import com.catail.backend.catalyst.application.CatalystListItemResponse;
 import com.catail.backend.catalyst.application.CatalystMonitoringOperation;
@@ -233,17 +234,21 @@ class CatalystControllerTest {
     class Delete {
 
         @Test
-        @DisplayName("본인 소유 카탈리스트를 삭제하면 200을 반환한다")
+        @DisplayName("본인 소유 카탈리스트를 삭제하면 200과 status/deletedAt을 반환한다")
         void delete_owned_returns200() throws Exception {
+            CatalystDeleteResponse response = new CatalystDeleteResponse("ENDED", LocalDateTime.now());
+            given(catalystService.delete(1L, 1L)).willReturn(response);
+
             mockMvc.perform(delete("/api/catalysts/{id}", 1L))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.status").value("ENDED"))
                     .andDo(document("catalyst/delete",
                             responseFields(
                                     fieldWithPath("success").description("성공 여부"),
-                                    fieldWithPath("data").description("null")
-                                            .optional().type(JsonFieldType.NULL),
-                                    fieldWithPath("error").description("null")
+                                    fieldWithPath("data.status").description("삭제 후 상태(ENDED)"),
+                                    fieldWithPath("data.deletedAt").description("삭제 시각"),
+                                    fieldWithPath("error").description("에러 정보 (성공 시 null)")
                                             .optional().type(JsonFieldType.NULL)
                             )
                     ));
