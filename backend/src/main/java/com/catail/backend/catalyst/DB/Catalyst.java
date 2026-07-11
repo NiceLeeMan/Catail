@@ -5,6 +5,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -45,6 +46,17 @@ public class Catalyst {
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "search_conditions", nullable = false, columnDefinition = "jsonb")
     private List<String> searchConditions = new ArrayList<>();
+
+    @Setter
+    @ColumnDefault("4")
+    @Column(name = "search_interval_hours", nullable = false)
+    private Integer searchIntervalHours;
+
+    @Column(name = "last_searched_at")
+    private LocalDateTime lastSearchedAt;
+
+    @Column(name = "activated_at")
+    private LocalDateTime activatedAt;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

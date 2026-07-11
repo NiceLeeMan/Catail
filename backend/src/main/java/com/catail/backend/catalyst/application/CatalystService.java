@@ -28,7 +28,7 @@ public class CatalystService {
 
     // UC-1: 카탈리스트 생성
     @Transactional
-    public CatalystDetailResponse create(Long userId, String title, String content,
+    public CatalystCreateResponse create(Long userId, String title, String content,
                                           List<Long> industryIds, String status) {
         CatalystDomain domain = CatalystDomain.create(userId, title, content, industryIds, status);
 
@@ -42,7 +42,7 @@ public class CatalystService {
             signalCollectionPort.triggerCollection(saved.getId());
         }
 
-        return toDetailResponse(saved);
+        return toCreateResponse(saved);
     }
 
     // UC-2: 카탈리스트 목록 조회
@@ -71,12 +71,12 @@ public class CatalystService {
         return PageResponse.of(mapped);
     }
 
-    // UC-3: 카탈리스트 상세 조회
+    // UC-3: 카탈리스트 상세 조회 (카탈리스트 정보 탭)
     @Transactional(readOnly = true)
-    public CatalystDetailResponse getDetail(Long id, Long userId) {
+    public CatalystInfoResponse getDetail(Long id, Long userId) {
         CatalystDomain domain = catalystRepositoryAdapter.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new BusinessException(CatalystErrorCode.NOT_FOUND));
-        return toDetailResponse(domain);
+        return toInfoResponse(domain);
     }
 
     // UC-4: 삭제
@@ -88,18 +88,42 @@ public class CatalystService {
         catalystRepositoryAdapter.persistStatusAndDeletion(domain.getId(), domain.getStatus());
     }
 
-    private CatalystDetailResponse toDetailResponse(CatalystDomain domain) {
-        Map<Long, String> industryNames = catalystRepositoryAdapter.findIndustryNamesByIds(domain.getIndustryIds());
-        List<String> industryTags = domain.getIndustryIds().stream()
-                .map(industryNames::get)
-                .toList();
+    private CatalystCreateResponse toCreateResponse(CatalystDomain domain) {
+        List<String> industries = resolveIndustryNames(domain);
 
-        return new CatalystDetailResponse(
+        return new CatalystCreateResponse(
                 domain.getId(),
                 domain.getTitle(),
                 domain.getContent(),
                 domain.getStatus().name(),
-                industryTags,
+                industries,
                 domain.getCreatedAt());
+    }
+
+    private CatalystInfoResponse toInfoResponse(CatalystDomain domain) {
+        List<String> industries = resolveIndustryNames(domain);
+
+        CatalystBasicInfo basicInfo = new CatalystBasicInfo(
+                domain.getTitle(),
+                domain.getContent(),
+                industries,
+                domain.getCreatedAt(),
+                domain.getUpdatedAt());
+
+        CatalystMonitoringOperation monitoringOperation = new CatalystMonitoringOperation(
+                domain.getStatus().name(),
+                domain.getSearchConditions(),
+                domain.getSearchIntervalHours(),
+                domain.getLastSearchedAt(),
+                domain.getActivatedAt());
+
+        return new CatalystInfoResponse(basicInfo, monitoringOperation);
+    }
+
+    private List<String> resolveIndustryNames(CatalystDomain domain) {
+        Map<Long, String> industryNames = catalystRepositoryAdapter.findIndustryNamesByIds(domain.getIndustryIds());
+        return domain.getIndustryIds().stream()
+                .map(industryNames::get)
+                .toList();
     }
 }

@@ -17,6 +17,7 @@ public class CatalystDomain {
     private static final int CONTENT_MIN_LENGTH = 50;
     private static final int CONTENT_MAX_LENGTH = 500;
     private static final int INDUSTRY_IDS_MAX_SIZE = 10;
+    private static final int DEFAULT_SEARCH_INTERVAL_HOURS = 4;
 
     private final Long id;
     private final Long userId;
@@ -25,12 +26,16 @@ public class CatalystDomain {
     private CatalystStatus status;
     private final List<Long> industryIds;
     private final List<String> searchConditions;
+    private final int searchIntervalHours;
+    private final LocalDateTime lastSearchedAt;
+    private final LocalDateTime activatedAt;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     private LocalDateTime deletedAt;
 
     private CatalystDomain(Long id, Long userId, String title, String content, CatalystStatus status,
-                            List<Long> industryIds, List<String> searchConditions,
+                            List<Long> industryIds, List<String> searchConditions, int searchIntervalHours,
+                            LocalDateTime lastSearchedAt, LocalDateTime activatedAt,
                             LocalDateTime createdAt, LocalDateTime updatedAt, LocalDateTime deletedAt) {
         this.id = id;
         this.userId = userId;
@@ -39,6 +44,9 @@ public class CatalystDomain {
         this.status = status;
         this.industryIds = industryIds;
         this.searchConditions = searchConditions;
+        this.searchIntervalHours = searchIntervalHours;
+        this.lastSearchedAt = lastSearchedAt;
+        this.activatedAt = activatedAt;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
         this.deletedAt = deletedAt;
@@ -52,15 +60,19 @@ public class CatalystDomain {
         CatalystStatus status = validateStatus(rawStatus);
 
         return new CatalystDomain(null, userId, title, content, status,
-                validIndustryIds, new ArrayList<>(), null, null, null);
+                validIndustryIds, new ArrayList<>(), DEFAULT_SEARCH_INTERVAL_HOURS, null, null,
+                null, null, null);
     }
 
     public static CatalystDomain reconstruct(Long id, Long userId, String title, String content,
                                               CatalystStatus status, List<Long> industryIds,
-                                              List<String> searchConditions, LocalDateTime createdAt,
-                                              LocalDateTime updatedAt, LocalDateTime deletedAt) {
+                                              List<String> searchConditions, int searchIntervalHours,
+                                              LocalDateTime lastSearchedAt, LocalDateTime activatedAt,
+                                              LocalDateTime createdAt, LocalDateTime updatedAt,
+                                              LocalDateTime deletedAt) {
         return new CatalystDomain(id, userId, title, content, status, industryIds,
-                searchConditions, createdAt, updatedAt, deletedAt);
+                searchConditions, searchIntervalHours, lastSearchedAt, activatedAt,
+                createdAt, updatedAt, deletedAt);
     }
 
     private static String validateTitle(String rawTitle) {
