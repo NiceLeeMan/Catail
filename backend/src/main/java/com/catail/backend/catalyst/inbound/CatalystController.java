@@ -4,7 +4,9 @@ import com.catail.backend.catalyst.application.CatalystCreateResponse;
 import com.catail.backend.catalyst.application.CatalystInfoResponse;
 import com.catail.backend.catalyst.application.CatalystListItemResponse;
 import com.catail.backend.catalyst.application.CatalystService;
+import com.catail.backend.catalyst.application.CatalystStatusResponse;
 import com.catail.backend.catalyst.application.CatalystUpdateResponse;
+import com.catail.backend.catalyst.application.ChangeCatalystStatusRequest;
 import com.catail.backend.catalyst.application.CreateCatalystRequest;
 import com.catail.backend.catalyst.application.UpdateCatalystBasicInfoRequest;
 import com.catail.backend.global.ApiResponse;
@@ -18,6 +20,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -79,6 +82,16 @@ public class CatalystController {
         CatalystUpdateResponse response = catalystService.updateBasicInfo(
                 id, userId, request.title(), request.content(), request.industryIds());
 
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<ApiResponse<CatalystStatusResponse>> changeStatus(
+            @CurrentUserId Long userId,
+            @PathVariable Long id,
+            @Valid @RequestBody ChangeCatalystStatusRequest request) {
+
+        CatalystStatusResponse response = catalystService.changeStatus(id, userId, request.targetStatus());
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }

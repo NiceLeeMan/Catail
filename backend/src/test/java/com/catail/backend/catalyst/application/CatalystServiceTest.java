@@ -370,4 +370,69 @@ class CatalystServiceTest {
             verify(catalystRepositoryAdapter, never()).replaceIndustries(any(), any());
         }
     }
+
+    @Nested
+    @DisplayName("changeStatus")
+    class ChangeStatus {
+
+        @Test
+        @DisplayName("허용된 전이 요청이면 상태를 영속화하고 응답을 반환한다")
+        void changeStatus_allowedTransition_persistsAndReturnsResponse() {
+            CatalystDomain domain = CatalystDomain.reconstruct(
+                    1L, 1L, "title", "a".repeat(50), CatalystStatus.ACTIVE, List.of(1L), List.of(), 4, null, null,
+                    LocalDateTime.now(), LocalDateTime.now(), null);
+            given(catalystRepositoryAdapter.findByIdAndUserId(1L, 1L)).willReturn(Optional.of(domain));
+            LocalDateTime updatedAt = LocalDateTime.now();
+            given(catalystRepositoryAdapter.persistStatus(1L, CatalystStatus.PAUSED)).willReturn(updatedAt);
+
+            CatalystStatusResponse response = catalystService.changeStatus(1L, 1L, "PAUSED");
+
+            assertThat(response.status()).isEqualTo("PAUSED");
+            assertThat(response.updatedAt()).isEqualTo(updatedAt);
+            verify(catalystRepositoryAdapter, never()).persistStatusAndDeletion(any(), any());
+        }
+
+        @Test
+        @DisplayName("허용되지 않은 전이 요청이면 INVALID_INPUT 예외가 발생하고 영속화되지 않는다")
+        void changeStatus_disallowedTransition_throwsInvalidInputAndSkipsPersist() {
+            CatalystDomain domain = CatalystDomain.reconstruct(
+                    1L, 1L, "title", "a".repeat(50), CatalystStatus.ENDED, List.of(1L), List.of(), 4, null, null,
+                    LocalDateTime.now(), LocalDateTime.now(), null);
+            given(catalystRepositoryAdapter.findByIdAndUserId(1L, 1L)).willReturn(Optional.of(domain));
+
+            assertThatThrownBy(() -> catalystService.changeStatus(1L, 1L, "ACTIVE"))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(GlobalErrorCode.INVALID_INPUT);
+
+            verify(catalystRepositoryAdapter, never()).persistStatus(any(), any());
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 targetStatus 문자열이면 INVALID_INPUT 예외가 발생한다")
+        void changeStatus_unknownTargetStatus_throwsInvalidInput() {
+            CatalystDomain domain = CatalystDomain.reconstruct(
+                    1L, 1L, "title", "a".repeat(50), CatalystStatus.ACTIVE, List.of(1L), List.of(), 4, null, null,
+                    LocalDateTime.now(), LocalDateTime.now(), null);
+            given(catalystRepositoryAdapter.findByIdAndUserId(1L, 1L)).willReturn(Optional.of(domain));
+
+            assertThatThrownBy(() -> catalystService.changeStatus(1L, 1L, "FOO"))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(GlobalErrorCode.INVALID_INPUT);
+
+            verify(catalystRepositoryAdapter, never()).persistStatus(any(), any());
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 catalyst이면 NOT_FOUND 예외가 발생한다")
+        void changeStatus_nonExistentId_throwsNotFound() {
+            given(catalystRepositoryAdapter.findByIdAndUserId(999L, 1L)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> catalystService.changeStatus(999L, 1L, "ACTIVE"))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(CatalystErrorCode.NOT_FOUND);
+        }
+    }
 }

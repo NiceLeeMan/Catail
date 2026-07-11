@@ -1,6 +1,7 @@
 package com.catail.backend.catalyst.application;
 
 import com.catail.backend.catalyst.DB.CatalystRepositoryAdapter;
+import com.catail.backend.catalyst.DB.CatalystStatus;
 import com.catail.backend.catalyst.domain.CatalystDomain;
 import com.catail.backend.catalyst.outbound.SignalCollectionPort;
 import com.catail.backend.global.BusinessException;
@@ -108,6 +109,30 @@ public class CatalystService {
 
         List<String> industries = resolveIndustryNames(domain);
         return new CatalystUpdateResponse(domain.getTitle(), domain.getContent(), industries, updatedAt);
+    }
+
+    // UC-6: 모니터링 상태 변경
+    @Transactional
+    public CatalystStatusResponse changeStatus(Long id, Long userId, String rawTargetStatus) {
+        CatalystDomain domain = catalystRepositoryAdapter.findByIdAndUserId(id, userId)
+                .orElseThrow(() -> new BusinessException(CatalystErrorCode.NOT_FOUND));
+
+        CatalystStatus target = parseTargetStatus(rawTargetStatus);
+        domain.changeStatus(target);
+
+        // TODO(M5): INACTIVE→ACTIVE 전이 시 signalCollectionPort.triggerCollection 즉시 1회 트리거 +
+        // search_interval_hours 주기 반복 수집 시작 로직 필요 (시그널 수집 파이프라인 미구현으로 보류)
+
+        LocalDateTime updatedAt = catalystRepositoryAdapter.persistStatus(domain.getId(), domain.getStatus());
+        return new CatalystStatusResponse(domain.getStatus().name(), updatedAt);
+    }
+
+    private CatalystStatus parseTargetStatus(String rawTargetStatus) {
+        try {
+            return CatalystStatus.valueOf(rawTargetStatus);
+        } catch (IllegalArgumentException | NullPointerException e) {
+            throw new BusinessException(GlobalErrorCode.INVALID_INPUT);
+        }
     }
 
     private CatalystCreateResponse toCreateResponse(CatalystDomain domain) {
