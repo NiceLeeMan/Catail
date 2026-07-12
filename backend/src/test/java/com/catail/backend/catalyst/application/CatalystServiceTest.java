@@ -297,4 +297,77 @@ class CatalystServiceTest {
             verify(catalystRepositoryAdapter, never()).persistStatusAndDeletion(any(), any());
         }
     }
+
+    @Nested
+    @DisplayName("updateBasicInfo")
+    class UpdateBasicInfo {
+
+        @Test
+        @DisplayName("정상 요청이면 title/content/industries를 교체하고 갱신된 응답을 반환한다")
+        void updateBasicInfo_validRequest_replacesAndReturnsResponse() {
+            CatalystDomain domain = CatalystDomain.reconstruct(
+                    1L, 1L, "old title", "a".repeat(50), CatalystStatus.ACTIVE, List.of(1L), List.of(), 4, null, null,
+                    LocalDateTime.now(), LocalDateTime.now(), null);
+            given(catalystRepositoryAdapter.findByIdAndUserId(1L, 1L)).willReturn(Optional.of(domain));
+            given(catalystRepositoryAdapter.existsAllIndustries(List.of(2L))).willReturn(true);
+            LocalDateTime updatedAt = LocalDateTime.now();
+            given(catalystRepositoryAdapter.persistBasicInfo(1L, "new title", "b".repeat(60))).willReturn(updatedAt);
+            given(catalystRepositoryAdapter.findIndustryNamesByIds(List.of(2L))).willReturn(Map.of(2L, "Finance"));
+
+            CatalystUpdateResponse response = catalystService.updateBasicInfo(
+                    1L, 1L, "new title", "b".repeat(60), List.of(2L));
+
+            assertThat(response.title()).isEqualTo("new title");
+            assertThat(response.content()).hasSize(60);
+            assertThat(response.industries()).containsExactly("Finance");
+            assertThat(response.updatedAt()).isEqualTo(updatedAt);
+            verify(catalystRepositoryAdapter).replaceIndustries(1L, List.of(2L));
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 catalyst이면 NOT_FOUND 예외가 발생한다")
+        void updateBasicInfo_nonExistentId_throwsNotFound() {
+            given(catalystRepositoryAdapter.findByIdAndUserId(999L, 1L)).willReturn(Optional.empty());
+
+            assertThatThrownBy(() -> catalystService.updateBasicInfo(999L, 1L, "title", "a".repeat(50), List.of(1L)))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(CatalystErrorCode.NOT_FOUND);
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 industryId가 포함되면 INVALID_INPUT 예외가 발생하고 저장되지 않는다")
+        void updateBasicInfo_nonExistentIndustryId_throwsInvalidInputAndSkipsPersist() {
+            CatalystDomain domain = CatalystDomain.reconstruct(
+                    1L, 1L, "title", "a".repeat(50), CatalystStatus.ACTIVE, List.of(1L), List.of(), 4, null, null,
+                    LocalDateTime.now(), LocalDateTime.now(), null);
+            given(catalystRepositoryAdapter.findByIdAndUserId(1L, 1L)).willReturn(Optional.of(domain));
+            given(catalystRepositoryAdapter.existsAllIndustries(List.of(999L))).willReturn(false);
+
+            assertThatThrownBy(() -> catalystService.updateBasicInfo(1L, 1L, "title", "a".repeat(50), List.of(999L)))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(GlobalErrorCode.INVALID_INPUT);
+
+            verify(catalystRepositoryAdapter, never()).persistBasicInfo(any(), any(), any());
+            verify(catalystRepositoryAdapter, never()).replaceIndustries(any(), any());
+        }
+
+        @Test
+        @DisplayName("title이 유효하지 않으면 도메인 검증에서 예외가 발생하고 어댑터의 영속화 메서드는 호출되지 않는다")
+        void updateBasicInfo_invalidTitle_throwsBeforePersisting() {
+            CatalystDomain domain = CatalystDomain.reconstruct(
+                    1L, 1L, "title", "a".repeat(50), CatalystStatus.ACTIVE, List.of(1L), List.of(), 4, null, null,
+                    LocalDateTime.now(), LocalDateTime.now(), null);
+            given(catalystRepositoryAdapter.findByIdAndUserId(1L, 1L)).willReturn(Optional.of(domain));
+
+            assertThatThrownBy(() -> catalystService.updateBasicInfo(1L, 1L, "a".repeat(51), "a".repeat(50), List.of(1L)))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(GlobalErrorCode.INVALID_INPUT);
+
+            verify(catalystRepositoryAdapter, never()).persistBasicInfo(any(), any(), any());
+            verify(catalystRepositoryAdapter, never()).replaceIndustries(any(), any());
+        }
+    }
 }

@@ -7,12 +7,15 @@ import {
   type CatalystDetailTab,
 } from '../components/catalyst-detail/CatalystDetailTabs'
 import { BasicInfoCard } from '../components/catalyst-detail/BasicInfoCard'
+import { EditBasicInfoModal } from '../components/catalyst-detail/EditBasicInfoModal'
 import { SearchConditionsCard } from '../components/catalyst-detail/SearchConditionsCard'
 import { MonitoringExecCard } from '../components/catalyst-detail/MonitoringExecCard'
 import { ManagementCard } from '../components/catalyst-detail/ManagementCard'
 import { CatalystListSkeleton } from '../components/catalyst/CatalystListSkeleton'
-import { useCatalystDetailQuery } from '../hooks/useCatalysts'
+import { useCatalystDetailQuery, useUpdateCatalystBasicInfoMutation } from '../hooks/useCatalysts'
 import { formatDate, formatDateTime } from '../utils/date'
+import type { UpdateCatalystBasicInfoFormValues } from '../schemas/catalyst'
+
 
 function TabPlaceholder({ label }: { label: string }) {
   return (
@@ -27,10 +30,12 @@ function TabPlaceholder({ label }: { label: string }) {
 export function CatalystDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [activeTab, setActiveTab] = useState<CatalystDetailTab>('info')
+  const [isEditModalOpen, setEditModalOpen] = useState(false)
   const catalystId = Number(id)
   const isInvalidId = !id || Number.isNaN(catalystId)
 
   const { data, isLoading, isError } = useCatalystDetailQuery(catalystId)
+  const updateBasicInfoMutation = useUpdateCatalystBasicInfoMutation(catalystId)
 
   if (isInvalidId) {
     return (
@@ -44,6 +49,18 @@ export function CatalystDetailPage() {
       </div>
     )
   }
+
+  const openEditModal = () => {
+    updateBasicInfoMutation.reset();
+    setEditModalOpen(true);
+  };
+
+  const handleUpdateBasicInfo = (values: UpdateCatalystBasicInfoFormValues) => {
+    if (updateBasicInfoMutation.isPending) return;
+    updateBasicInfoMutation.mutate(values, {
+      onSuccess: () => setEditModalOpen(false),
+    });
+  };
 
   return (
     <div className="box-border flex min-h-screen w-full flex-col items-center bg-bg-base">
@@ -85,6 +102,7 @@ export function CatalystDetailPage() {
                   industryTags={data.basicInfo.industries}
                   createdAtLabel={formatDate(data.basicInfo.createdAt)}
                   updatedAtLabel={formatDateTime(data.basicInfo.updatedAt)}
+                  onEditClick={openEditModal}
                 />
 
                 <div className="box-border flex w-full items-start gap-4">
@@ -106,6 +124,21 @@ export function CatalystDetailPage() {
 
                 <ManagementCard
                   currentStatus={data.monitoringOperation.status}
+                />
+
+                <EditBasicInfoModal
+                  open={isEditModalOpen}
+                  initialTitle={data.basicInfo.title}
+                  initialContent={data.basicInfo.content}
+                  initialIndustryNames={data.basicInfo.industries}
+                  onClose={() => setEditModalOpen(false)}
+                  onSubmit={handleUpdateBasicInfo}
+                  isSubmitting={updateBasicInfoMutation.isPending}
+                  submitError={
+                    updateBasicInfoMutation.isError
+                      ? '수정에 실패했습니다.'
+                      : undefined
+                  }
                 />
               </>
             )}

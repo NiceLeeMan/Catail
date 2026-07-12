@@ -6,7 +6,9 @@ import com.catail.backend.catalyst.application.CatalystInfoResponse;
 import com.catail.backend.catalyst.application.CatalystListItemResponse;
 import com.catail.backend.catalyst.application.CatalystMonitoringOperation;
 import com.catail.backend.catalyst.application.CatalystService;
+import com.catail.backend.catalyst.application.CatalystUpdateResponse;
 import com.catail.backend.catalyst.application.CreateCatalystRequest;
+import com.catail.backend.catalyst.application.UpdateCatalystBasicInfoRequest;
 import com.catail.backend.global.BusinessException;
 import com.catail.backend.global.PageResponse;
 import com.catail.backend.catalyst.application.CatalystErrorCode;
@@ -43,6 +45,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.response
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -252,4 +255,65 @@ class CatalystControllerTest {
                     .andExpect(status().isNotFound());
         }
     }
+
+    @Nested
+    @DisplayName("PUT /api/catalysts/{id}")
+    class UpdateBasicInfo {
+
+        @Test
+        @DisplayName("유효한 요청이면 200과 수정된 기본정보를 반환한다")
+        void updateBasicInfo_validRequest_returns200() throws Exception {
+            UpdateCatalystBasicInfoRequest request = new UpdateCatalystBasicInfoRequest(
+                    "새 제목", "a".repeat(50), List.of(1L));
+            CatalystUpdateResponse response = new CatalystUpdateResponse(
+                    "새 제목", "a".repeat(50), List.of("IT"), LocalDateTime.now());
+            given(catalystService.updateBasicInfo(1L, 1L, "새 제목", "a".repeat(50), List.of(1L)))
+                    .willReturn(response);
+
+            mockMvc.perform(put("/api/catalysts/{id}", 1L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.title").value("새 제목"))
+                    .andDo(document("catalyst/update-basic-info",
+                            responseFields(
+                                    fieldWithPath("success").description("성공 여부"),
+                                    fieldWithPath("data.title").description("수정된 제목"),
+                                    fieldWithPath("data.content").description("수정된 본문"),
+                                    fieldWithPath("data.industries").description("수정된 업종 목록"),
+                                    fieldWithPath("data.updatedAt").description("수정일시"),
+                                    fieldWithPath("error").description("에러 정보 (성공 시 null)")
+                                            .optional().type(JsonFieldType.NULL)
+                            )
+                    ));
+        }
+
+        @Test
+        @DisplayName("title이 비어있으면 400을 반환한다")
+        void updateBasicInfo_blankTitle_returns400() throws Exception {
+            UpdateCatalystBasicInfoRequest request = new UpdateCatalystBasicInfoRequest(
+                    "", "a".repeat(50), List.of(1L));
+
+            mockMvc.perform(put("/api/catalysts/{id}", 1L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 카탈리스트를 수정하면 404를 반환한다")
+        void updateBasicInfo_notFound_returns404() throws Exception {
+            UpdateCatalystBasicInfoRequest request = new UpdateCatalystBasicInfoRequest(
+                    "제목", "a".repeat(50), List.of(1L));
+            given(catalystService.updateBasicInfo(999L, 1L, "제목", "a".repeat(50), List.of(1L)))
+                    .willThrow(new BusinessException(CatalystErrorCode.NOT_FOUND));
+
+            mockMvc.perform(put("/api/catalysts/{id}", 999L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(request)))
+                    .andExpect(status().isNotFound());
+        }
+    }
+
 }

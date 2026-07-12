@@ -7,6 +7,7 @@ interface BasicInfoCardProps {
   industryTags: string[];
   createdAtLabel: string;
   updatedAtLabel: string;
+  onEditClick: () => void;
 }
 
 function Field({ label, children }: { label: string; children: ReactNode }) {
@@ -24,6 +25,7 @@ export function BasicInfoCard({
   industryTags,
   createdAtLabel,
   updatedAtLabel,
+  onEditClick,
 }: BasicInfoCardProps) {
   return (
     <div className="box-border flex w-full flex-col items-start rounded-card border border-border bg-bg-surface">
@@ -31,6 +33,7 @@ export function BasicInfoCard({
         <h2 className="text-[16px] font-bold text-text-primary">기본 정보</h2>
         <button
           type="button"
+          onClick={onEditClick}
           className="box-border flex items-center gap-1.5 rounded-lg border border-border px-3.5 py-2 text-[12px] font-semibold text-text-secondary hover:bg-bg-base"
         >
           <Pencil className="h-3.5 w-3.5" />

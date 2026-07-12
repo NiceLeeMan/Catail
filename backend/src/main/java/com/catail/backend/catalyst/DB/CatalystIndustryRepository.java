@@ -9,4 +9,6 @@ public interface CatalystIndustryRepository extends JpaRepository<CatalystIndust
     List<CatalystIndustry> findByCatalystId(Long catalystId);
 
     List<CatalystIndustry> findByCatalystIdIn(List<Long> catalystIds);
+
+    void deleteByCatalystId(Long catalystId);
 }
