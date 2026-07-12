@@ -85,6 +85,10 @@ public class CatalystRepositoryAdapter {
 
     public void replaceIndustries(Long catalystId, List<Long> industryIds) {
         catalystIndustryRepository.deleteByCatalystId(catalystId);
+        // deleteByCatalystId는 영속성 컨텍스트에 삭제를 예약할 뿐이라, flush 없이 두면
+        // Hibernate가 flush 시 INSERT를 DELETE보다 먼저 실행해 겹치는 industryId에서
+        // uk_catalyst_industry 유니크 제약조건 위반이 발생한다. 여기서 즉시 flush해 순서를 보장한다.
+        catalystIndustryRepository.flush();
 
         List<CatalystIndustry> joins = industryIds.stream()
                 .map(industryId -> {
