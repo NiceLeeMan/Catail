@@ -77,3 +77,13 @@ export interface CatalystUpdateResponse {
   industries: string[];
   updatedAt: string; // ISO datetime string
 }
+
+export interface ChangeCatalystStatusPayload {
+  targetStatus: CatalystStatus;
+}
+
+export interface CatalystStatusChangeResponse {
+  status: CatalystStatus;
+  updatedAt: string; // ISO datetime string
+}
+
