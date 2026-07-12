@@ -1,7 +1,10 @@
 import { ArrowLeft } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { STATUS_META, type CatalystStatus } from '../../types/catalyst';
-import { formatCatalystId } from '../../mocks/catalystDetail';
+
+function formatCatalystId(id: number): string {
+  return `CAT-2025-${String(id).padStart(4, '0')}`;
+}
 
 interface CatalystDetailHeaderProps {
   id: number;

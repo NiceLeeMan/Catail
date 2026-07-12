@@ -1,5 +1,12 @@
-import { useMutation, useQuery } from '@tanstack/react-query';
-import { createCatalyst, fetchCatalysts } from '../api/catalysts';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+  changeCatalystStatus,
+  createCatalyst,
+  deleteCatalyst,
+  fetchCatalystDetail,
+  fetchCatalysts,
+} from '../api/catalysts';
+import type { CatalystStatus } from '../types/catalyst';
 
 export const useCatalystsQuery = (currentPage: number) => {
   return useQuery({
@@ -13,5 +20,13 @@ export const useCatalystsQuery = (currentPage: number) => {
 export const useCreateCatalystMutation = () => {
   return useMutation({
     mutationFn: createCatalyst,
+  });
+};
+
+export const useCatalystDetailQuery = (id: number) => {
+  return useQuery({
+    queryKey: ['catalysts', 'detail', id],
+    queryFn: () => fetchCatalystDetail(id),
+    enabled: !Number.isNaN(id),
   });
 };
