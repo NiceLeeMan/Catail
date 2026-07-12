@@ -11,7 +11,7 @@ tags:
   - name: 인증
     description: JWT 토큰 발급 / 갱신 / 로그아웃
   - name: 카탈리스트
-    description: 카탈리스트 생성 / 목록조회 / 상세조회 / 삭제
+    description: 카탈리스트 생성 / 목록조회 / 상세조회 / 수정 / 삭제
 
 paths:
   /oauth2/authorization/google:
@@ -199,11 +199,51 @@ paths:
         '404':
           $ref: '#/components/responses/CatalystNotFound'
 
+    put:
+      tags:
+        - 카탈리스트
+      summary: 카탈리스트 기본정보 수정
+      description: |
+        title / content / industryIds 3개 필드를 전체 교체합니다.
+        status와 검색조건은 이 API의 수정 대상이 아닙니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 카탈리스트 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCatalystBasicInfoRequest'
+            example:
+              title: 반도체 업황 개선 (수정)
+              content: 메모리 반도체 가격 상승 전환에 따른 관련주 수혜 기대, 파운드리 업황도 개선세로 전환
+              industryIds: [1, 2]
+      responses:
+        '200':
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalystUpdateResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/CatalystNotFound'
+
     delete:
       tags:
         - 카탈리스트
       summary: 카탈리스트 삭제
-      description: 본인 소유의 카탈리스트를 삭제합니다.
       security:
         - bearerAuth: []
       parameters:
@@ -457,6 +497,56 @@ components:
           example: true
         data:
           $ref: '#/components/schemas/CatalystPage'
+        error:
+          type: object
+          nullable: true
+
+    UpdateCatalystBasicInfoRequest:
+      type: object
+      required:
+        - title
+        - content
+        - industryIds
+      properties:
+        title:
+          type: string
+          description: 제목 (필수)
+        content:
+          type: string
+          description: 본문 (필수)
+        industryIds:
+          type: array
+          description: 업종 ID 목록 (1개 이상 10개 이하)
+          minItems: 1
+          maxItems: 10
+          items:
+            type: integer
+            format: int64
+
+    CatalystUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        industries:
+          type: array
+          items:
+            type: string
+          description: 업종 목록
+        updatedAt:
+          type: string
+          format: date-time
+
+    CatalystUpdateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CatalystUpdate'
         error:
           type: object
           nullable: true
