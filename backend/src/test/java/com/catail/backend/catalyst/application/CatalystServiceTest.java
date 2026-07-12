@@ -56,16 +56,16 @@ class CatalystServiceTest {
         void create_activeStatus_triggersSignalCollection() {
             given(catalystRepositoryAdapter.existsAllIndustries(List.of(1L))).willReturn(true);
             CatalystDomain saved = CatalystDomain.reconstruct(
-                    10L, 1L, "title", "a".repeat(50), CatalystStatus.ACTIVE, List.of(1L), List.of(),
+                    10L, 1L, "title", "a".repeat(50), CatalystStatus.ACTIVE, List.of(1L), List.of(), 4, null, null,
                     LocalDateTime.now(), LocalDateTime.now(), null);
             given(catalystRepositoryAdapter.save(any(CatalystDomain.class))).willReturn(saved);
             given(catalystRepositoryAdapter.findIndustryNamesByIds(List.of(1L))).willReturn(Map.of(1L, "IT"));
 
-            CatalystDetailResponse response = catalystService.create(1L, "title", "a".repeat(50), List.of(1L), "ACTIVE");
+            CatalystCreateResponse response = catalystService.create(1L, "title", "a".repeat(50), List.of(1L), "ACTIVE");
 
             assertThat(response.id()).isEqualTo(10L);
             assertThat(response.status()).isEqualTo("ACTIVE");
-            assertThat(response.industryTags()).containsExactly("IT");
+            assertThat(response.industries()).containsExactly("IT");
             verify(signalCollectionPort).triggerCollection(10L);
         }
 
@@ -74,7 +74,7 @@ class CatalystServiceTest {
         void create_inactiveStatus_doesNotTriggerSignalCollection() {
             given(catalystRepositoryAdapter.existsAllIndustries(List.of(1L))).willReturn(true);
             CatalystDomain saved = CatalystDomain.reconstruct(
-                    11L, 1L, "title", "a".repeat(50), CatalystStatus.INACTIVE, List.of(1L), List.of(),
+                    11L, 1L, "title", "a".repeat(50), CatalystStatus.INACTIVE, List.of(1L), List.of(), 4, null, null,
                     LocalDateTime.now(), LocalDateTime.now(), null);
             given(catalystRepositoryAdapter.save(any(CatalystDomain.class))).willReturn(saved);
             given(catalystRepositoryAdapter.findIndustryNamesByIds(List.of(1L))).willReturn(Map.of(1L, "IT"));
@@ -118,7 +118,7 @@ class CatalystServiceTest {
         @DisplayName("목록 조회 시 industryTags와 pendingSignalCount(스텁 0)가 올바르게 매핑된다")
         void getList_withCatalysts_mapsCorrectly() {
             CatalystDomain domain = CatalystDomain.reconstruct(
-                    1L, 1L, "title1", "content1", CatalystStatus.ACTIVE, List.of(1L, 2L), List.of(),
+                    1L, 1L, "title1", "content1", CatalystStatus.ACTIVE, List.of(1L, 2L), List.of(), 4, null, null,
                     LocalDateTime.now(), LocalDateTime.now(), null);
             Page<CatalystDomain> page = new PageImpl<>(List.of(domain), PageRequest.of(0, 20), 1);
             given(catalystRepositoryAdapter.findPageByUserId(eq(1L), any(Pageable.class))).willReturn(page);
@@ -170,7 +170,7 @@ class CatalystServiceTest {
         @DisplayName("pendingSignalCount 맵에 없는 catalystId는 0으로 기본값 처리된다")
         void getList_missingPendingCount_defaultsToZero() {
             CatalystDomain domain = CatalystDomain.reconstruct(
-                    5L, 1L, "title", "content", CatalystStatus.ACTIVE, List.of(1L), List.of(),
+                    5L, 1L, "title", "content", CatalystStatus.ACTIVE, List.of(1L), List.of(), 4, null, null,
                     LocalDateTime.now(), LocalDateTime.now(), null);
             Page<CatalystDomain> page = new PageImpl<>(List.of(domain), PageRequest.of(0, 20), 1);
             given(catalystRepositoryAdapter.findPageByUserId(eq(1L), any(Pageable.class))).willReturn(page);
@@ -188,18 +188,23 @@ class CatalystServiceTest {
     class GetDetail {
 
         @Test
-        @DisplayName("존재하는 본인 소유 catalyst이면 상세 정보를 반환한다")
+        @DisplayName("존재하는 본인 소유 catalyst이면 basicInfo와 monitoringOperation을 반환한다")
         void getDetail_existingCatalyst_returnsDetail() {
             CatalystDomain domain = CatalystDomain.reconstruct(
-                    1L, 1L, "title", "content", CatalystStatus.ACTIVE, List.of(1L), List.of(),
-                    LocalDateTime.now(), LocalDateTime.now(), null);
+                    1L, 1L, "title", "content", CatalystStatus.ACTIVE, List.of(1L), List.of("검색어"), 6,
+                    LocalDateTime.now(), null, LocalDateTime.now(), LocalDateTime.now(), null);
             given(catalystRepositoryAdapter.findByIdAndUserId(1L, 1L)).willReturn(Optional.of(domain));
             given(catalystRepositoryAdapter.findIndustryNamesByIds(List.of(1L))).willReturn(Map.of(1L, "IT"));
 
-            CatalystDetailResponse response = catalystService.getDetail(1L, 1L);
+            CatalystInfoResponse response = catalystService.getDetail(1L, 1L);
 
-            assertThat(response.id()).isEqualTo(1L);
-            assertThat(response.industryTags()).containsExactly("IT");
+            assertThat(response.basicInfo().title()).isEqualTo("title");
+            assertThat(response.basicInfo().industries()).containsExactly("IT");
+            assertThat(response.monitoringOperation().status()).isEqualTo("ACTIVE");
+            assertThat(response.monitoringOperation().searchConditions()).containsExactly("검색어");
+            assertThat(response.monitoringOperation().searchIntervalHours()).isEqualTo(6);
+            assertThat(response.monitoringOperation().lastSearchedAt()).isNotNull();
+            assertThat(response.monitoringOperation().activatedAt()).isNull();
         }
 
         @Test
@@ -244,7 +249,7 @@ class CatalystServiceTest {
         @DisplayName("본인 소유 catalyst 삭제 시 status ENDED로 영속화된다")
         void delete_ownedCatalyst_persistsEndedStatus() {
             CatalystDomain domain = CatalystDomain.reconstruct(
-                    1L, 1L, "title", "content", CatalystStatus.ACTIVE, List.of(1L), List.of(),
+                    1L, 1L, "title", "content", CatalystStatus.ACTIVE, List.of(1L), List.of(), 4, null, null,
                     LocalDateTime.now(), LocalDateTime.now(), null);
             given(catalystRepositoryAdapter.findByIdAndUserId(1L, 1L)).willReturn(Optional.of(domain));
 

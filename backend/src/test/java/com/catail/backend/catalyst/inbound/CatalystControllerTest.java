@@ -1,7 +1,10 @@
 package com.catail.backend.catalyst.inbound;
 
-import com.catail.backend.catalyst.application.CatalystDetailResponse;
+import com.catail.backend.catalyst.application.CatalystBasicInfo;
+import com.catail.backend.catalyst.application.CatalystCreateResponse;
+import com.catail.backend.catalyst.application.CatalystInfoResponse;
 import com.catail.backend.catalyst.application.CatalystListItemResponse;
+import com.catail.backend.catalyst.application.CatalystMonitoringOperation;
 import com.catail.backend.catalyst.application.CatalystService;
 import com.catail.backend.catalyst.application.CreateCatalystRequest;
 import com.catail.backend.global.BusinessException;
@@ -80,7 +83,7 @@ class CatalystControllerTest {
         void create_validRequest_returns201() throws Exception {
             CreateCatalystRequest request = new CreateCatalystRequest(
                     "제목", "a".repeat(50), List.of(1L), "ACTIVE");
-            CatalystDetailResponse response = new CatalystDetailResponse(
+            CatalystCreateResponse response = new CatalystCreateResponse(
                     1L, "제목", "a".repeat(50), "ACTIVE", List.of("IT"), LocalDateTime.now());
             given(catalystService.create(1L, "제목", "a".repeat(50), List.of(1L), "ACTIVE"))
                     .willReturn(response);
@@ -98,7 +101,7 @@ class CatalystControllerTest {
                                     fieldWithPath("data.title").description("제목"),
                                     fieldWithPath("data.content").description("본문"),
                                     fieldWithPath("data.status").description("상태"),
-                                    fieldWithPath("data.industryTags").description("업종 태그 목록"),
+                                    fieldWithPath("data.industries").description("업종 목록"),
                                     fieldWithPath("data.createdAt").description("생성일시"),
                                     fieldWithPath("error").description("에러 정보 (성공 시 null)")
                                             .optional().type(JsonFieldType.NULL)
@@ -176,22 +179,31 @@ class CatalystControllerTest {
         @Test
         @DisplayName("존재하는 카탈리스트를 조회하면 200을 반환한다")
         void getDetail_existing_returns200() throws Exception {
-            CatalystDetailResponse response = new CatalystDetailResponse(
-                    1L, "제목", "a".repeat(50), "ACTIVE", List.of("IT"), LocalDateTime.now());
+            CatalystBasicInfo basicInfo = new CatalystBasicInfo(
+                    "제목", "a".repeat(50), List.of("IT"), LocalDateTime.now(), LocalDateTime.now());
+            CatalystMonitoringOperation monitoringOperation = new CatalystMonitoringOperation(
+                    "ACTIVE", List.of("검색어"), 4, null, null);
+            CatalystInfoResponse response = new CatalystInfoResponse(basicInfo, monitoringOperation);
             given(catalystService.getDetail(1L, 1L)).willReturn(response);
 
             mockMvc.perform(get("/api/catalysts/{id}", 1L))
                     .andExpect(status().isOk())
-                    .andExpect(jsonPath("$.data.id").value(1))
+                    .andExpect(jsonPath("$.data.basicInfo.title").value("제목"))
                     .andDo(document("catalyst/detail",
                             responseFields(
                                     fieldWithPath("success").description("성공 여부"),
-                                    fieldWithPath("data.id").description("카탈리스트 ID"),
-                                    fieldWithPath("data.title").description("제목"),
-                                    fieldWithPath("data.content").description("본문"),
-                                    fieldWithPath("data.status").description("상태"),
-                                    fieldWithPath("data.industryTags").description("업종 태그 목록"),
-                                    fieldWithPath("data.createdAt").description("생성일시"),
+                                    fieldWithPath("data.basicInfo.title").description("제목"),
+                                    fieldWithPath("data.basicInfo.content").description("본문"),
+                                    fieldWithPath("data.basicInfo.industries").description("업종 목록"),
+                                    fieldWithPath("data.basicInfo.createdAt").description("생성일시"),
+                                    fieldWithPath("data.basicInfo.updatedAt").description("수정일시"),
+                                    fieldWithPath("data.monitoringOperation.status").description("모니터링 상태"),
+                                    fieldWithPath("data.monitoringOperation.searchConditions").description("모니터링 검색조건 목록"),
+                                    fieldWithPath("data.monitoringOperation.searchIntervalHours").description("탐색 주기(시간)"),
+                                    fieldWithPath("data.monitoringOperation.lastSearchedAt").description("마지막 탐색 시각")
+                                            .optional().type(JsonFieldType.NULL),
+                                    fieldWithPath("data.monitoringOperation.activatedAt").description("모니터링 시작 시각")
+                                            .optional().type(JsonFieldType.NULL),
                                     fieldWithPath("error").description("에러 정보 (성공 시 null)")
                                             .optional().type(JsonFieldType.NULL)
                             )

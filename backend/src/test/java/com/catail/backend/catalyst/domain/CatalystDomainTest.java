@@ -31,6 +31,9 @@ class CatalystDomainTest {
             assertThat(domain.getIndustryIds()).containsExactly(1L);
             assertThat(domain.getStatus()).isEqualTo(CatalystStatus.ACTIVE);
             assertThat(domain.getSearchConditions()).isEmpty();
+            assertThat(domain.getSearchIntervalHours()).isEqualTo(4);
+            assertThat(domain.getLastSearchedAt()).isNull();
+            assertThat(domain.getActivatedAt()).isNull();
         }
 
         @Test
@@ -182,7 +185,7 @@ class CatalystDomainTest {
         @DisplayName("삭제 시 이전 status와 무관하게 ENDED로 전환되고 deletedAt이 기록된다")
         void delete_anyPriorStatus_transitionsToEndedAndStampsDeletedAt(CatalystStatus priorStatus) {
             CatalystDomain domain = CatalystDomain.reconstruct(
-                    1L, 1L, "title", "content", priorStatus, List.of(1L), List.of(),
+                    1L, 1L, "title", "content", priorStatus, List.of(1L), List.of(), 4, null, null,
                     LocalDateTime.now(), LocalDateTime.now(), null);
 
             domain.delete();

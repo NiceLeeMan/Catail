@@ -3,12 +3,11 @@ package com.catail.backend.catalyst.application;
 import java.time.LocalDateTime;
 import java.util.List;
 
-public record CatalystDetailResponse(
-        Long id,
+public record CatalystBasicInfo(
         String title,
         String content,
-        String status,
-        List<String> industryTags,
-        LocalDateTime createdAt
+        List<String> industries,
+        LocalDateTime createdAt,
+        LocalDateTime updatedAt
 ) {
 }

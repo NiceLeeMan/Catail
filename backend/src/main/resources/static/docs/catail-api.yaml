@@ -133,7 +133,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CatalystResponse'
+                $ref: '#/components/schemas/CatalystCreateResponse'
         '400':
           $ref: '#/components/responses/ValidationError'
         '401':
@@ -171,7 +171,12 @@ paths:
     get:
       tags:
         - 카탈리스트
-      summary: 카탈리스트 상세 조회
+      summary: 카탈리스트 상세 조회 (카탈리스트 정보 탭)
+      description: |
+        카탈리스트 상세 화면의 "카탈리스트 정보" 탭에 필요한 데이터를 basicInfo / monitoringOperation 두 덩어리로 반환합니다.
+
+        `monitoringOperation.lastSearchedAt`과 `activatedAt`은 시그널 수집 파이프라인이 아직 구현되지 않아 현재는 항상 `null`입니다
+        (모니터링 상태변경 API의 `INACTIVE`→`ACTIVE` 전이 지점에 트리거 연동 자리는 마련되어 있으나 실제 수집 로직은 미구현).
       security:
         - bearerAuth: []
       parameters:
@@ -188,7 +193,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CatalystResponse'
+                $ref: '#/components/schemas/CatalystInfoResponse'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '404':
@@ -298,7 +303,7 @@ components:
           description: 상태 (필수)
           enum: [ACTIVE, INACTIVE, PAUSED, ENDED]
 
-    CatalystDetail:
+    CatalystCreate:
       type: object
       properties:
         id:
@@ -311,23 +316,89 @@ components:
         status:
           type: string
           enum: [ACTIVE, INACTIVE, PAUSED, ENDED]
-        industryTags:
+        industries:
           type: array
           items:
             type: string
-          description: 업종 태그 목록
+          description: 업종 목록
         createdAt:
           type: string
           format: date-time
 
-    CatalystResponse:
+    CatalystCreateResponse:
       type: object
       properties:
         success:
           type: boolean
           example: true
         data:
-          $ref: '#/components/schemas/CatalystDetail'
+          $ref: '#/components/schemas/CatalystCreate'
+        error:
+          type: object
+          nullable: true
+
+    CatalystBasicInfo:
+      type: object
+      description: 기본 정보 카드
+      properties:
+        title:
+          type: string
+        content:
+          type: string
+        industries:
+          type: array
+          items:
+            type: string
+          description: 업종 목록
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CatalystMonitoringOperation:
+      type: object
+      description: 모니터링 운영정보
+      properties:
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, PAUSED, ENDED]
+        searchConditions:
+          type: array
+          items:
+            type: string
+          description: 모니터링 검색 조건 목록
+        searchIntervalHours:
+          type: integer
+          description: 탐색 주기(시간 단위), 기본값 4
+        lastSearchedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 마지막 탐색 시각 (시그널 수집 파이프라인 구현 전까지 항상 null)
+        activatedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: 모니터링 시작 시각 (모니터링 상태변경 API 구현 전까지 항상 null)
+
+    CatalystInfo:
+      type: object
+      properties:
+        basicInfo:
+          $ref: '#/components/schemas/CatalystBasicInfo'
+        monitoringOperation:
+          $ref: '#/components/schemas/CatalystMonitoringOperation'
+
+    CatalystInfoResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CatalystInfo'
         error:
           type: object
           nullable: true

@@ -18,6 +18,9 @@ public class CatalystMapper {
                 entity.getStatus(),
                 industryIds,
                 entity.getSearchConditions(),
+                entity.getSearchIntervalHours(),
+                entity.getLastSearchedAt(),
+                entity.getActivatedAt(),
                 entity.getCreatedAt(),
                 entity.getUpdatedAt(),
                 entity.getDeletedAt()
@@ -31,6 +34,7 @@ public class CatalystMapper {
         entity.setContent(domain.getContent());
         entity.setStatus(domain.getStatus());
         entity.setSearchConditions(domain.getSearchConditions());
+        entity.setSearchIntervalHours(domain.getSearchIntervalHours());
         return entity;
     }
 }

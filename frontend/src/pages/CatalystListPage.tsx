@@ -37,7 +37,7 @@ export function CatalystListPage() {
   const { data, isLoading, isError } = useCatalystsQuery(currentPage);
 
   const handleCardClick = (id: number) => {
-    console.log('catalyst clicked', id);
+    navigate(`/catalysts/${id}`);
   };
 
   return (

@@ -40,3 +40,24 @@ export interface CatalystDetailResponse {
   industryTags: string[];
   createdAt: string; // ISO datetime string
 }
+
+export interface CatalystBasicInfo {
+  title: string;
+  content: string;
+  industries: string[];
+  createdAt: string; // ISO datetime string
+  updatedAt: string; // ISO datetime string
+}
+
+export interface CatalystMonitoringOperation {
+  status: CatalystStatus;
+  searchConditions: string[];
+  searchIntervalHours: number;
+  lastSearchedAt: string | null; // ISO datetime string
+  activatedAt: string | null; // ISO datetime string
+}
+
+export interface CatalystInfoResponse {
+  basicInfo: CatalystBasicInfo;
+  monitoringOperation: CatalystMonitoringOperation;
+}

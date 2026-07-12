@@ -1,6 +1,7 @@
 package com.catail.backend.catalyst.inbound;
 
-import com.catail.backend.catalyst.application.CatalystDetailResponse;
+import com.catail.backend.catalyst.application.CatalystCreateResponse;
+import com.catail.backend.catalyst.application.CatalystInfoResponse;
 import com.catail.backend.catalyst.application.CatalystListItemResponse;
 import com.catail.backend.catalyst.application.CatalystService;
 import com.catail.backend.catalyst.application.CreateCatalystRequest;
@@ -31,11 +32,11 @@ public class CatalystController {
     private final CatalystService catalystService;
 
     @PostMapping
-    public ResponseEntity<ApiResponse<CatalystDetailResponse>> create(
+    public ResponseEntity<ApiResponse<CatalystCreateResponse>> create(
             @CurrentUserId Long userId,
             @Valid @RequestBody CreateCatalystRequest request) {
 
-        CatalystDetailResponse response = catalystService.create(
+        CatalystCreateResponse response = catalystService.create(
                 userId, request.title(), request.content(), request.industryIds(), request.status());
 
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.ok(response));
@@ -50,7 +51,7 @@ public class CatalystController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<CatalystDetailResponse>> getDetail(
+    public ResponseEntity<ApiResponse<CatalystInfoResponse>> getDetail(
             @CurrentUserId Long userId,
             @PathVariable Long id) {
 
