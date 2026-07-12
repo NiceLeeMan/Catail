@@ -61,3 +61,16 @@ export interface CatalystInfoResponse {
   basicInfo: CatalystBasicInfo;
   monitoringOperation: CatalystMonitoringOperation;
 }
+
+export interface UpdateCatalystBasicInfoPayload {
+  title: string;
+  content: string;
+  industryIds: number[];
+}
+
+export interface CatalystUpdateResponse {
+  title: string;
+  content: string;
+  industries: string[];
+  updatedAt: string; // ISO datetime string
+}
