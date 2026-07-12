@@ -7,6 +7,9 @@ export const STATUS_META: Record<CatalystStatus, { bg: string; text: string; lab
   ENDED: { bg: 'bg-status-ended-bg', text: 'text-status-ended', label: 'ENDED' },
 };
 
+// 모니터링 상태변경 API의 목표 상태로 선택 가능한 값. INACTIVE로의 전이는 허용되지 않는다.
+export const TARGET_STATUS_OPTIONS: CatalystStatus[] = ['ACTIVE', 'PAUSED', 'ENDED'];
+
 export interface Catalyst {
   id: number;
   title: string;

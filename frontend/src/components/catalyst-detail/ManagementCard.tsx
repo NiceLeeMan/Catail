@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { ArrowRight, ChevronDown, Trash2 } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ArrowRight, Check, ChevronDown, Trash2 } from 'lucide-react';
 import { ConfirmDialog } from '../ConfirmDialog';
-import { STATUS_META, type CatalystStatus } from '../../types/catalyst';
+import { STATUS_META, TARGET_STATUS_OPTIONS, type CatalystStatus } from '../../types/catalyst';
 
 interface ManagementCardProps {
   currentStatus: CatalystStatus;
@@ -9,7 +9,25 @@ interface ManagementCardProps {
 
 export function ManagementCard({ currentStatus }: ManagementCardProps) {
   const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDropdownOpen, setDropdownOpen] = useState(false);
+  const [targetStatus, setTargetStatus] = useState<CatalystStatus | null>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
   const meta = STATUS_META[currentStatus];
+  const targetOptions = TARGET_STATUS_OPTIONS.filter((status) => status !== currentStatus);
+
+  useEffect(() => {
+    if (!isDropdownOpen) return;
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isDropdownOpen]);
 
   return (
     <div className="box-border flex w-full flex-col items-start rounded-card border border-border bg-bg-surface">
@@ -38,14 +56,55 @@ export function ManagementCard({ currentStatus }: ManagementCardProps) {
 
             <ArrowRight className="h-4 w-4 shrink-0 text-text-muted" />
 
-            <div className="box-border flex w-[200px] shrink-0 items-center justify-between rounded-lg border border-border px-3.5 py-2.5">
-              <span className="text-[13px] font-normal text-text-muted">목표 상태 선택</span>
-              <ChevronDown className="h-4 w-4 text-text-muted" />
+            <div ref={dropdownRef} className="relative box-border w-[200px] shrink-0">
+              <button
+                type="button"
+                onClick={() => setDropdownOpen((prev) => !prev)}
+                className="box-border flex w-full items-center justify-between rounded-lg border border-border px-3.5 py-2.5 hover:bg-bg-base"
+              >
+                {targetStatus ? (
+                  <span
+                    className={`box-border w-fit rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${STATUS_META[targetStatus].bg} ${STATUS_META[targetStatus].text}`}
+                  >
+                    {STATUS_META[targetStatus].label}
+                  </span>
+                ) : (
+                  <span className="text-[13px] font-normal text-text-muted">목표 상태 선택</span>
+                )}
+                <ChevronDown className="h-4 w-4 shrink-0 text-text-muted" />
+              </button>
+
+              {isDropdownOpen && (
+                <div className="absolute left-0 top-[calc(100%+6px)] z-10 box-border flex w-full flex-col items-start overflow-hidden rounded-lg border border-border bg-bg-surface shadow-card">
+                  {targetOptions.map((status) => {
+                    const optionMeta = STATUS_META[status];
+                    return (
+                      <button
+                        key={status}
+                        type="button"
+                        onClick={() => {
+                          setTargetStatus(status);
+                          setDropdownOpen(false);
+                        }}
+                        className="box-border flex w-full items-center justify-between px-3.5 py-2.5 hover:bg-bg-base"
+                      >
+                        <span
+                          className={`box-border w-fit rounded-full px-2.5 py-0.5 text-[12px] font-semibold ${optionMeta.bg} ${optionMeta.text}`}
+                        >
+                          {optionMeta.label}
+                        </span>
+                        {status === targetStatus && <Check className="h-4 w-4 text-primary" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
 
             <button
               type="button"
-              className="box-border flex shrink-0 items-center justify-center rounded-lg px-5 py-2.5 text-[13px] font-semibold text-white hover:opacity-90"
+              disabled={!targetStatus}
+              className="box-border flex shrink-0 items-center justify-center rounded-lg px-5 py-2.5 text-[13px] font-semibold text-white hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               style={{ backgroundImage: 'linear-gradient(90deg, #2E6BF2 0%, #00B89B 100%)' }}
             >
               변경
