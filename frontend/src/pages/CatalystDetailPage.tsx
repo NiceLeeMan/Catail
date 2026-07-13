@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { isAxiosError } from 'axios'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { AppHeader } from '../components/layout/AppHeader'
 import { CatalystDetailHeader } from '../components/catalyst-detail/CatalystDetailHeader'
 import {
@@ -16,6 +16,7 @@ import { CatalystListSkeleton } from '../components/catalyst/CatalystListSkeleto
 import {
   useCatalystDetailQuery,
   useChangeCatalystStatusMutation,
+  useDeleteCatalystMutation,
   useUpdateCatalystBasicInfoMutation,
 } from '../hooks/useCatalysts'
 import { formatDate, formatDateTime } from '../utils/date'
@@ -42,6 +43,7 @@ function extractErrorMessage(error: unknown, fallback: string): string {
 
 export function CatalystDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<CatalystDetailTab>('info')
   const [isEditModalOpen, setEditModalOpen] = useState(false)
   const catalystId = Number(id)
@@ -49,6 +51,7 @@ export function CatalystDetailPage() {
 
   const { data, isLoading, isError } = useCatalystDetailQuery(catalystId)
   const changeStatusMutation = useChangeCatalystStatusMutation(catalystId)
+  const deleteMutation = useDeleteCatalystMutation(catalystId)
   const updateBasicInfoMutation = useUpdateCatalystBasicInfoMutation(catalystId)
 
   if (isInvalidId) {
@@ -67,6 +70,13 @@ export function CatalystDetailPage() {
   const handleChangeStatus = (targetStatus: CatalystStatus) => {
     if (changeStatusMutation.isPending) return
     changeStatusMutation.mutate(targetStatus)
+  }
+
+  const handleDelete = () => {
+    if (deleteMutation.isPending) return
+    deleteMutation.mutate(undefined, {
+      onSuccess: () => navigate('/catalysts'),
+    })
   }
 
   const openEditModal = () => {
@@ -134,8 +144,8 @@ export function CatalystDetailPage() {
                     lastMonitoredAtLabel={
                       data.monitoringOperation.lastSearchedAt
                         ? formatDateTime(
-                            data.monitoringOperation.lastSearchedAt
-                          )
+                          data.monitoringOperation.lastSearchedAt
+                        )
                         : '모니터링 이력 없음'
                     }
                   />
@@ -148,13 +158,21 @@ export function CatalystDetailPage() {
                   changeStatusError={
                     changeStatusMutation.isError
                       ? extractErrorMessage(
-                          changeStatusMutation.error,
-                          '상태 변경에 실패했습니다.'
-                        )
+                        changeStatusMutation.error,
+                        '상태 변경에 실패했습니다.'
+                      )
                       : undefined
                   }
-                  onDelete={() => {}}
-                  isDeleting={false}
+                  onDelete={handleDelete}
+                  isDeleting={deleteMutation.isPending}
+                  deleteError={
+                    deleteMutation.isError
+                      ? extractErrorMessage(
+                        deleteMutation.error,
+                        '삭제에 실패했습니다.'
+                      )
+                      : undefined
+                  }
                 />
 
                 <EditBasicInfoModal

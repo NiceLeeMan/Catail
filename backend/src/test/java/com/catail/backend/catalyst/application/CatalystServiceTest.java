@@ -246,16 +246,18 @@ class CatalystServiceTest {
     class Delete {
 
         @Test
-        @DisplayName("본인 소유 catalyst 삭제 시 status ENDED로 영속화된다")
+        @DisplayName("본인 소유 catalyst 삭제 시 status ENDED로 영속화되고 응답에 status/deletedAt이 담긴다")
         void delete_ownedCatalyst_persistsEndedStatus() {
             CatalystDomain domain = CatalystDomain.reconstruct(
                     1L, 1L, "title", "content", CatalystStatus.ACTIVE, List.of(1L), List.of(), 4, null, null,
                     LocalDateTime.now(), LocalDateTime.now(), null);
             given(catalystRepositoryAdapter.findByIdAndUserId(1L, 1L)).willReturn(Optional.of(domain));
 
-            catalystService.delete(1L, 1L);
+            CatalystDeleteResponse response = catalystService.delete(1L, 1L);
 
             verify(catalystRepositoryAdapter).persistStatusAndDeletion(1L, CatalystStatus.ENDED);
+            assertThat(response.status()).isEqualTo("ENDED");
+            assertThat(response.deletedAt()).isNotNull();
         }
 
         @Test

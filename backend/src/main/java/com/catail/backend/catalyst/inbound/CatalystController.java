@@ -1,6 +1,7 @@
 package com.catail.backend.catalyst.inbound;
 
 import com.catail.backend.catalyst.application.CatalystCreateResponse;
+import com.catail.backend.catalyst.application.CatalystDeleteResponse;
 import com.catail.backend.catalyst.application.CatalystInfoResponse;
 import com.catail.backend.catalyst.application.CatalystListItemResponse;
 import com.catail.backend.catalyst.application.CatalystService;
@@ -65,12 +66,12 @@ public class CatalystController {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> delete(
+    public ResponseEntity<ApiResponse<CatalystDeleteResponse>> delete(
             @CurrentUserId Long userId,
             @PathVariable Long id) {
 
-        catalystService.delete(id, userId);
-        return ResponseEntity.ok(ApiResponse.ok());
+        CatalystDeleteResponse response = catalystService.delete(id, userId);
+        return ResponseEntity.ok(ApiResponse.ok(response));
     }
 
     @PutMapping("/{id}")

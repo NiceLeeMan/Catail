@@ -194,6 +194,19 @@ class CatalystDomainTest {
             assertThat(domain.getStatus()).isEqualTo(CatalystStatus.ENDED);
             assertThat(domain.getDeletedAt()).isNotNull();
         }
+
+        @Test
+        @DisplayName("이미 ENDED 상태(모니터링 종료만 된 상태)여도 전이 검증 없이 deletedAt만 기록된다")
+        void delete_alreadyEndedStatus_stampsDeletedAtWithoutTransition() {
+            CatalystDomain domain = CatalystDomain.reconstruct(
+                    1L, 1L, "title", "content", CatalystStatus.ENDED, List.of(1L), List.of(), 4, null, null,
+                    LocalDateTime.now(), LocalDateTime.now(), null);
+
+            domain.delete();
+
+            assertThat(domain.getStatus()).isEqualTo(CatalystStatus.ENDED);
+            assertThat(domain.getDeletedAt()).isNotNull();
+        }
     }
 
     @Nested
