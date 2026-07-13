@@ -75,6 +75,13 @@ public class CatalystRepositoryAdapter {
         entity.delete();
     }
 
+    public LocalDateTime persistStatus(Long catalystId, CatalystStatus newStatus) {
+        Catalyst entity = catalystRepository.findById(catalystId)
+                .orElseThrow(() -> new IllegalStateException("Catalyst not found: " + catalystId));
+        entity.setStatus(newStatus);
+        return catalystRepository.saveAndFlush(entity).getUpdatedAt();
+    }
+
     public LocalDateTime persistBasicInfo(Long catalystId, String title, String content) {
         Catalyst entity = catalystRepository.findById(catalystId)
                 .orElseThrow(() -> new IllegalStateException("Catalyst not found: " + catalystId));

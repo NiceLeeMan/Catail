@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { isAxiosError } from 'axios'
 import { useParams } from 'react-router-dom'
 import { AppHeader } from '../components/layout/AppHeader'
 import { CatalystDetailHeader } from '../components/catalyst-detail/CatalystDetailHeader'
@@ -12,10 +13,15 @@ import { SearchConditionsCard } from '../components/catalyst-detail/SearchCondit
 import { MonitoringExecCard } from '../components/catalyst-detail/MonitoringExecCard'
 import { ManagementCard } from '../components/catalyst-detail/ManagementCard'
 import { CatalystListSkeleton } from '../components/catalyst/CatalystListSkeleton'
-import { useCatalystDetailQuery, useUpdateCatalystBasicInfoMutation } from '../hooks/useCatalysts'
+import {
+  useCatalystDetailQuery,
+  useChangeCatalystStatusMutation,
+  useUpdateCatalystBasicInfoMutation,
+} from '../hooks/useCatalysts'
 import { formatDate, formatDateTime } from '../utils/date'
+import type { ApiResponse } from '../api/types'
+import type { CatalystStatus } from '../types/catalyst'
 import type { UpdateCatalystBasicInfoFormValues } from '../schemas/catalyst'
-
 
 function TabPlaceholder({ label }: { label: string }) {
   return (
@@ -27,6 +33,13 @@ function TabPlaceholder({ label }: { label: string }) {
   )
 }
 
+function extractErrorMessage(error: unknown, fallback: string): string {
+  if (isAxiosError<ApiResponse<never>>(error)) {
+    return error.response?.data?.error?.message ?? fallback
+  }
+  return fallback
+}
+
 export function CatalystDetailPage() {
   const { id } = useParams<{ id: string }>()
   const [activeTab, setActiveTab] = useState<CatalystDetailTab>('info')
@@ -35,6 +48,7 @@ export function CatalystDetailPage() {
   const isInvalidId = !id || Number.isNaN(catalystId)
 
   const { data, isLoading, isError } = useCatalystDetailQuery(catalystId)
+  const changeStatusMutation = useChangeCatalystStatusMutation(catalystId)
   const updateBasicInfoMutation = useUpdateCatalystBasicInfoMutation(catalystId)
 
   if (isInvalidId) {
@@ -50,17 +64,22 @@ export function CatalystDetailPage() {
     )
   }
 
+  const handleChangeStatus = (targetStatus: CatalystStatus) => {
+    if (changeStatusMutation.isPending) return
+    changeStatusMutation.mutate(targetStatus)
+  }
+
   const openEditModal = () => {
-    updateBasicInfoMutation.reset();
-    setEditModalOpen(true);
-  };
+    updateBasicInfoMutation.reset()
+    setEditModalOpen(true)
+  }
 
   const handleUpdateBasicInfo = (values: UpdateCatalystBasicInfoFormValues) => {
-    if (updateBasicInfoMutation.isPending) return;
+    if (updateBasicInfoMutation.isPending) return
     updateBasicInfoMutation.mutate(values, {
       onSuccess: () => setEditModalOpen(false),
-    });
-  };
+    })
+  }
 
   return (
     <div className="box-border flex min-h-screen w-full flex-col items-center bg-bg-base">
@@ -124,6 +143,18 @@ export function CatalystDetailPage() {
 
                 <ManagementCard
                   currentStatus={data.monitoringOperation.status}
+                  onChangeStatus={handleChangeStatus}
+                  isChangingStatus={changeStatusMutation.isPending}
+                  changeStatusError={
+                    changeStatusMutation.isError
+                      ? extractErrorMessage(
+                          changeStatusMutation.error,
+                          '상태 변경에 실패했습니다.'
+                        )
+                      : undefined
+                  }
+                  onDelete={() => {}}
+                  isDeleting={false}
                 />
 
                 <EditBasicInfoModal

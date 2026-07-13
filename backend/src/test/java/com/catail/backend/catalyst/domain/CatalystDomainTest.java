@@ -7,6 +7,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.EnumSource;
 
 import java.time.LocalDateTime;
@@ -239,6 +240,58 @@ class CatalystDomainTest {
                     .isInstanceOf(BusinessException.class)
                     .extracting(e -> ((BusinessException) e).getErrorCode())
                     .isEqualTo(GlobalErrorCode.INVALID_INPUT);
+        }
+    }
+
+    @Nested
+    @DisplayName("changeStatus")
+    class ChangeStatus {
+
+        @ParameterizedTest
+        @CsvSource({
+                "INACTIVE, ACTIVE",
+                "INACTIVE, ENDED",
+                "ACTIVE, PAUSED",
+                "ACTIVE, ENDED",
+                "PAUSED, ACTIVE",
+                "PAUSED, ENDED"
+        })
+        @DisplayName("허용된 전이는 상태가 정상적으로 변경된다")
+        void changeStatus_allowedTransition_succeeds(CatalystStatus from, CatalystStatus to) {
+            CatalystDomain domain = CatalystDomain.reconstruct(
+                    1L, 1L, "title", "a".repeat(50), from, List.of(1L), List.of(), 4,
+                    null, null, LocalDateTime.now(), LocalDateTime.now(), null);
+
+            domain.changeStatus(to);
+
+            assertThat(domain.getStatus()).isEqualTo(to);
+        }
+
+        @ParameterizedTest
+        @CsvSource({
+                "INACTIVE, PAUSED",
+                "INACTIVE, INACTIVE",
+                "ACTIVE, INACTIVE",
+                "ACTIVE, ACTIVE",
+                "PAUSED, INACTIVE",
+                "PAUSED, PAUSED",
+                "ENDED, ACTIVE",
+                "ENDED, PAUSED",
+                "ENDED, ENDED",
+                "ENDED, INACTIVE"
+        })
+        @DisplayName("허용되지 않은 전이는 INVALID_INPUT 예외가 발생하고 상태가 유지된다")
+        void changeStatus_disallowedTransition_throwsInvalidInputAndKeepsStatus(CatalystStatus from, CatalystStatus to) {
+            CatalystDomain domain = CatalystDomain.reconstruct(
+                    1L, 1L, "title", "a".repeat(50), from, List.of(1L), List.of(), 4,
+                    null, null, LocalDateTime.now(), LocalDateTime.now(), null);
+
+            assertThatThrownBy(() -> domain.changeStatus(to))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(e -> ((BusinessException) e).getErrorCode())
+                    .isEqualTo(GlobalErrorCode.INVALID_INPUT);
+
+            assertThat(domain.getStatus()).isEqualTo(from);
         }
     }
 

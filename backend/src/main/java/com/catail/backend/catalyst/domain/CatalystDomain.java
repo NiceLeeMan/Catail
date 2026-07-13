@@ -129,6 +129,22 @@ public class CatalystDomain {
         this.industryIds = validateIndustryIds(industryIds);
     }
 
+    public void changeStatus(CatalystStatus target) {
+        if (!isTransitionAllowed(this.status, target)) {
+            throw new BusinessException(GlobalErrorCode.INVALID_INPUT);
+        }
+        this.status = target;
+    }
+
+    private static boolean isTransitionAllowed(CatalystStatus from, CatalystStatus to) {
+        return switch (from) {
+            case INACTIVE -> to == CatalystStatus.ACTIVE || to == CatalystStatus.ENDED;
+            case ACTIVE -> to == CatalystStatus.PAUSED || to == CatalystStatus.ENDED;
+            case PAUSED -> to == CatalystStatus.ACTIVE || to == CatalystStatus.ENDED;
+            case ENDED -> false;
+        };
+    }
+
     public void delete() {
         this.status = CatalystStatus.ENDED;
         this.deletedAt = LocalDateTime.now();
