@@ -87,3 +87,7 @@ export interface CatalystStatusChangeResponse {
   updatedAt: string; // ISO datetime string
 }
 
+export interface CatalystDeleteResponse {
+  status: CatalystStatus;
+  deletedAt: string; // ISO datetime string
+}

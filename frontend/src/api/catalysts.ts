@@ -1,6 +1,7 @@
 import axiosInstance from './axiosInstance'
 import type { ApiResponse, PageResponse } from './types'
 import type {
+  CatalystDeleteResponse,
   CatalystDetailResponse,
   CatalystInfoResponse,
   CatalystListItemResponse,
@@ -54,5 +55,12 @@ export const changeCatalystStatus = async (
   const res = await axiosInstance.patch<
     ApiResponse<CatalystStatusChangeResponse>
   >(`/catalysts/${id}/status`, { targetStatus })
+  return res.data.data!
+}
+
+export const deleteCatalyst = async (id: number) => {
+  const res = await axiosInstance.delete<ApiResponse<CatalystDeleteResponse>>(
+    `/catalysts/${id}`
+  )
   return res.data.data!
 }

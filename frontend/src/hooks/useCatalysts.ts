@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   changeCatalystStatus,
   createCatalyst,
+  deleteCatalyst,
   fetchCatalystDetail,
   fetchCatalysts,
   updateCatalystBasicInfo,
@@ -55,3 +56,9 @@ export const useChangeCatalystStatusMutation = (id: number) => {
     },
   })
 }
+
+export const useDeleteCatalystMutation = (id: number) => {
+  return useMutation({
+    mutationFn: () => deleteCatalyst(id),
+  });
+};
