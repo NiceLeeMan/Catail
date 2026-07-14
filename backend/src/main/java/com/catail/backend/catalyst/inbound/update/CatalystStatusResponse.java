@@ -1,4 +1,4 @@
-package com.catail.backend.catalyst.application;
+package com.catail.backend.catalyst.inbound.update;
 
 import java.time.LocalDateTime;
 

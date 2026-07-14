@@ -5,6 +5,7 @@ import com.catail.backend.catalyst.DB.CatalystStatus;
 import com.catail.backend.catalyst.domain.CatalystDomain;
 import com.catail.backend.catalyst.inbound.create.CatalystCreateResponse;
 import com.catail.backend.catalyst.inbound.list.CatalystListItemResponse;
+import com.catail.backend.catalyst.inbound.update.CatalystStatusResponse;
 import com.catail.backend.catalyst.inbound.update.CatalystUpdateResponse;
 import com.catail.backend.catalyst.outbound.SignalCollectionPort;
 import com.catail.backend.global.BusinessException;
