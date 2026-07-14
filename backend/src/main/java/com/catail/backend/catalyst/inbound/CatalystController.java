@@ -1,6 +1,6 @@
 package com.catail.backend.catalyst.inbound;
 
-import com.catail.backend.catalyst.application.CatalystCreateResponse;
+import com.catail.backend.catalyst.inbound.create.CatalystCreateResponse;
 import com.catail.backend.catalyst.application.CatalystDeleteResponse;
 import com.catail.backend.catalyst.application.CatalystInfoResponse;
 import com.catail.backend.catalyst.application.CatalystListItemResponse;
@@ -8,7 +8,7 @@ import com.catail.backend.catalyst.application.CatalystService;
 import com.catail.backend.catalyst.application.CatalystStatusResponse;
 import com.catail.backend.catalyst.application.CatalystUpdateResponse;
 import com.catail.backend.catalyst.application.ChangeCatalystStatusRequest;
-import com.catail.backend.catalyst.application.CreateCatalystRequest;
+import com.catail.backend.catalyst.inbound.create.CreateCatalystRequest;
 import com.catail.backend.catalyst.application.UpdateCatalystBasicInfoRequest;
 import com.catail.backend.global.ApiResponse;
 import com.catail.backend.global.PageResponse;

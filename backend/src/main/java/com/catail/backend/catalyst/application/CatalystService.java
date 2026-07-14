@@ -3,6 +3,7 @@ package com.catail.backend.catalyst.application;
 import com.catail.backend.catalyst.DB.CatalystRepositoryAdapter;
 import com.catail.backend.catalyst.DB.CatalystStatus;
 import com.catail.backend.catalyst.domain.CatalystDomain;
+import com.catail.backend.catalyst.inbound.create.CatalystCreateResponse;
 import com.catail.backend.catalyst.outbound.SignalCollectionPort;
 import com.catail.backend.global.BusinessException;
 import com.catail.backend.global.GlobalErrorCode;
@@ -31,7 +32,7 @@ public class CatalystService {
     // UC-1: 카탈리스트 생성
     @Transactional
     public CatalystCreateResponse create(Long userId, String title, String content,
-                                          List<Long> industryIds, String status) {
+                                         List<Long> industryIds, String status) {
         CatalystDomain domain = CatalystDomain.create(userId, title, content, industryIds, status);
 
         if (!catalystRepositoryAdapter.existsAllIndustries(domain.getIndustryIds())) {
