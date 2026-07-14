@@ -2,8 +2,8 @@ package com.catail.backend.catalyst.inbound;
 
 import com.catail.backend.catalyst.inbound.create.CatalystCreateResponse;
 import com.catail.backend.catalyst.inbound.delete.CatalystDeleteResponse;
-import com.catail.backend.catalyst.application.CatalystInfoResponse;
-import com.catail.backend.catalyst.inbound.list.CatalystListItemResponse;
+import com.catail.backend.catalyst.inbound.read.CatalystInfoResponse;
+import com.catail.backend.catalyst.inbound.read.CatalystListItemResponse;
 import com.catail.backend.catalyst.application.CatalystService;
 import com.catail.backend.catalyst.inbound.update.CatalystStatusResponse;
 import com.catail.backend.catalyst.inbound.update.CatalystUpdateResponse;

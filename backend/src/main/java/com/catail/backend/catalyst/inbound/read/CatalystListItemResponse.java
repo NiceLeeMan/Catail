@@ -1,4 +1,4 @@
-package com.catail.backend.catalyst.inbound.list;
+package com.catail.backend.catalyst.inbound.read;
 
 import java.time.LocalDateTime;
 import java.util.List;
