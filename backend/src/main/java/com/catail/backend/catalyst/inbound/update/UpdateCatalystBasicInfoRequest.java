@@ -1,4 +1,4 @@
-package com.catail.backend.catalyst.application;
+package com.catail.backend.catalyst.inbound.update;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
