@@ -4,7 +4,7 @@ import com.catail.backend.catalyst.application.CatalystBasicInfo;
 import com.catail.backend.catalyst.inbound.create.CatalystCreateResponse;
 import com.catail.backend.catalyst.application.CatalystDeleteResponse;
 import com.catail.backend.catalyst.application.CatalystInfoResponse;
-import com.catail.backend.catalyst.application.CatalystListItemResponse;
+import com.catail.backend.catalyst.inbound.list.CatalystListItemResponse;
 import com.catail.backend.catalyst.application.CatalystMonitoringOperation;
 import com.catail.backend.catalyst.application.CatalystService;
 import com.catail.backend.catalyst.application.CatalystStatusResponse;
