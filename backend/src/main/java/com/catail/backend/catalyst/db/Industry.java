@@ -1,4 +1,4 @@
-package com.catail.backend.catalyst.DB;
+package com.catail.backend.catalyst.db;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
 import lombok.Getter;

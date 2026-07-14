@@ -1,4 +1,4 @@
-package com.catail.backend.catalyst.DB;
+package com.catail.backend.catalyst.db;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

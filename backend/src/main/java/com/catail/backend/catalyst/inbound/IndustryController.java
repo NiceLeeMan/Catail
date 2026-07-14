@@ -1,6 +1,6 @@
 package com.catail.backend.catalyst.inbound;
 
-import com.catail.backend.catalyst.DB.IndustryRepository;
+import com.catail.backend.catalyst.db.IndustryRepository;
 import com.catail.backend.catalyst.inbound.read.IndustryResponse;
 import com.catail.backend.global.ApiResponse;
 import lombok.RequiredArgsConstructor;

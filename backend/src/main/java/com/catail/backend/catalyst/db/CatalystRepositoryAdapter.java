@@ -1,6 +1,7 @@
-package com.catail.backend.catalyst.DB;
+package com.catail.backend.catalyst.db;
 
 import com.catail.backend.catalyst.domain.CatalystDomain;
+import com.catail.backend.catalyst.domain.CatalystStatus;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

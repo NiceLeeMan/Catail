@@ -1,6 +1,5 @@
 package com.catail.backend.catalyst.domain;
 
-import com.catail.backend.catalyst.DB.CatalystStatus;
 import com.catail.backend.global.BusinessException;
 import com.catail.backend.global.GlobalErrorCode;
 import lombok.Getter;

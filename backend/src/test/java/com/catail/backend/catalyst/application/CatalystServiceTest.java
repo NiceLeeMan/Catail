@@ -1,7 +1,7 @@
 package com.catail.backend.catalyst.application;
 
-import com.catail.backend.catalyst.DB.CatalystRepositoryAdapter;
-import com.catail.backend.catalyst.DB.CatalystStatus;
+import com.catail.backend.catalyst.db.CatalystRepositoryAdapter;
+import com.catail.backend.catalyst.domain.CatalystStatus;
 import com.catail.backend.catalyst.domain.CatalystDomain;
 import com.catail.backend.catalyst.inbound.create.CatalystCreateResponse;
 import com.catail.backend.catalyst.inbound.delete.CatalystDeleteResponse;

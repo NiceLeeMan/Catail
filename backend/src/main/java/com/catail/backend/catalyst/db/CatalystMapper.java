@@ -1,4 +1,4 @@
-package com.catail.backend.catalyst.DB;
+package com.catail.backend.catalyst.db;
 
 import com.catail.backend.catalyst.domain.CatalystDomain;
 
