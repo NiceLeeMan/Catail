@@ -76,15 +76,16 @@ public class CatalystService {
 
         domain.updateBasicInfo(title, content, industryIds);
 
-        if (!catalystRepositoryAdapter.existsAllIndustries(domain.getIndustryIds())) {
+        Map<Long, String> industryNames = catalystRepositoryAdapter.findIndustryNamesByIds(domain.getIndustryIds());
+        if (industryNames.size() != domain.getIndustryIds().size()) {
             throw new BusinessException(GlobalErrorCode.INVALID_INPUT);
         }
 
-        LocalDateTime updatedAt = catalystRepositoryAdapter.persistBasicInfo(
-                domain.getId(), domain.getTitle(), domain.getContent());
-        catalystRepositoryAdapter.replaceIndustries(domain.getId(), domain.getIndustryIds());
+        LocalDateTime updatedAt = catalystRepositoryAdapter.persistBasicInfo(domain);
 
-        List<String> industries = resolveIndustryNames(domain);
+        List<String> industries = domain.getIndustryIds().stream()
+                .map(industryNames::get)
+                .toList();
         return new CatalystUpdateResponse(domain.getTitle(), domain.getContent(), industries, updatedAt);
     }
 
