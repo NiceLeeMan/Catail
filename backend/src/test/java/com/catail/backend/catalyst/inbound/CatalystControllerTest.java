@@ -8,6 +8,7 @@ import com.catail.backend.catalyst.inbound.read.CatalystListItem;
 import com.catail.backend.catalyst.inbound.read.CatalystListResponse;
 import com.catail.backend.catalyst.application.CatalystMonitoringOperation;
 import com.catail.backend.catalyst.application.CatalystService;
+import com.catail.backend.catalyst.application.CatalystListService;
 import com.catail.backend.catalyst.inbound.update.CatalystStatusResponse;
 import com.catail.backend.catalyst.inbound.update.CatalystUpdateResponse;
 import com.catail.backend.catalyst.inbound.update.ChangeCatalystStatusRequest;
@@ -64,6 +65,7 @@ class CatalystControllerTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @MockitoBean private CatalystService catalystService;
+    @MockitoBean private CatalystListService catalystListService;
     @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
     @MockitoBean private CurrentUserIdArgumentResolver currentUserIdArgumentResolver;
 
@@ -151,7 +153,7 @@ class CatalystControllerTest {
                     1L, "제목", "ACTIVE", List.of("IT"), 0, LocalDateTime.now());
             CatalystListResponse response =
                     new CatalystListResponse(List.of(item), 0, 20, 1, 1, false);
-            given(catalystService.getList(1L, 0)).willReturn(response);
+            given(catalystListService.getList(1L, 0)).willReturn(response);
 
             mockMvc.perform(get("/api/catalysts"))
                     .andExpect(status().isOk())

@@ -4,6 +4,7 @@ import com.catail.backend.catalyst.inbound.create.CatalystCreateResponse;
 import com.catail.backend.catalyst.inbound.delete.CatalystDeleteResponse;
 import com.catail.backend.catalyst.inbound.read.CatalystInfoResponse;
 import com.catail.backend.catalyst.inbound.read.CatalystListResponse;
+import com.catail.backend.catalyst.application.CatalystListService;
 import com.catail.backend.catalyst.application.CatalystService;
 import com.catail.backend.catalyst.inbound.update.CatalystStatusResponse;
 import com.catail.backend.catalyst.inbound.update.CatalystUpdateResponse;
@@ -36,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class CatalystController {
 
     private final CatalystService catalystService;
+    private final CatalystListService catalystListService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<CatalystCreateResponse>> create(
@@ -53,7 +55,7 @@ public class CatalystController {
             @CurrentUserId Long userId,
             @RequestParam(defaultValue = "0") @Min(0) int page) {
 
-        return ResponseEntity.ok(ApiResponse.ok(catalystService.getList(userId, page)));
+        return ResponseEntity.ok(ApiResponse.ok(catalystListService.getList(userId, page)));
     }
 
     @GetMapping("/{id}")

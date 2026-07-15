@@ -13,6 +13,7 @@ import com.catail.backend.catalyst.outbound.SignalCollectionPort;
 import com.catail.backend.global.BusinessException;
 import com.catail.backend.global.GlobalErrorCode;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -52,6 +53,13 @@ class CatalystServiceTest {
 
     @InjectMocks
     private CatalystService catalystService;
+
+    private CatalystListService catalystListService;
+
+    @BeforeEach
+    void setUp() {
+        catalystListService = new CatalystListService(catalystRepositoryAdapter);
+    }
 
     @Nested
     @DisplayName("create")
@@ -131,7 +139,7 @@ class CatalystServiceTest {
             given(catalystRepositoryAdapter.findIndustryNamesByIds(anyList())).willReturn(Map.of(1L, "IT", 2L, "Finance"));
             given(catalystRepositoryAdapter.countPendingSignalsByCatalystIds(anyList())).willReturn(Map.of());
 
-            var response = catalystService.getList(1L, 0);
+            var response = catalystListService.getList(1L, 0);
 
             assertThat(response.items()).hasSize(1);
             CatalystListItem item = response.items().get(0);
@@ -148,7 +156,7 @@ class CatalystServiceTest {
             given(catalystRepositoryAdapter.findIndustryNamesByIds(anyList())).willReturn(Map.of());
             given(catalystRepositoryAdapter.countPendingSignalsByCatalystIds(anyList())).willReturn(Map.of());
 
-            var response = catalystService.getList(1L, 0);
+            var response = catalystListService.getList(1L, 0);
 
             assertThat(response.items()).isEmpty();
             assertThat(response.totalElements()).isZero();
@@ -162,7 +170,7 @@ class CatalystServiceTest {
             given(catalystRepositoryAdapter.findIndustryNamesByIds(anyList())).willReturn(Map.of());
             given(catalystRepositoryAdapter.countPendingSignalsByCatalystIds(anyList())).willReturn(Map.of());
 
-            catalystService.getList(1L, 2);
+            catalystListService.getList(1L, 2);
 
             ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
             verify(catalystRepositoryAdapter).findPageByUserId(eq(1L), captor.capture());
@@ -183,7 +191,7 @@ class CatalystServiceTest {
             given(catalystRepositoryAdapter.findIndustryNamesByIds(anyList())).willReturn(Map.of(1L, "IT"));
             given(catalystRepositoryAdapter.countPendingSignalsByCatalystIds(anyList())).willReturn(Map.of());
 
-            var response = catalystService.getList(1L, 0);
+            var response = catalystListService.getList(1L, 0);
 
             assertThat(response.items().get(0).pendingSignalCount()).isZero();
         }
