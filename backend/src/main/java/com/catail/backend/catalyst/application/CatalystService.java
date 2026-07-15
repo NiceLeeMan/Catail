@@ -32,7 +32,8 @@ public class CatalystService {
                                          List<Long> industryIds, String status) {
         CatalystDomain domain = CatalystDomain.create(userId, title, content, industryIds, status);
 
-        if (!catalystRepositoryAdapter.existsAllIndustries(domain.getIndustryIds())) {
+        Map<Long, String> industryNames = catalystRepositoryAdapter.findIndustryNamesByIds(domain.getIndustryIds());
+        if (industryNames.size() != domain.getIndustryIds().size()) {
             throw new BusinessException(GlobalErrorCode.INVALID_INPUT);
         }
 
@@ -42,7 +43,9 @@ public class CatalystService {
             signalCollectionPort.triggerCollection(saved.getId());
         }
 
-        List<String> industries = resolveIndustryNames(saved);
+        List<String> industries = saved.getIndustryIds().stream()
+                .map(industryNames::get)
+                .toList();
         return CatalystCreateResponse.from(saved, industries);
     }
 
