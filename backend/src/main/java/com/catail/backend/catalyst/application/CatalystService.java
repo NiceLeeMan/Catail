@@ -42,7 +42,8 @@ public class CatalystService {
             signalCollectionPort.triggerCollection(saved.getId());
         }
 
-        return toCreateResponse(saved);
+        List<String> industries = resolveIndustryNames(saved);
+        return CatalystCreateResponse.from(saved, industries);
     }
 
     // UC-3: 카탈리스트 상세 조회 (카탈리스트 정보 탭)
@@ -106,18 +107,6 @@ public class CatalystService {
         } catch (IllegalArgumentException | NullPointerException e) {
             throw new BusinessException(GlobalErrorCode.INVALID_INPUT);
         }
-    }
-
-    private CatalystCreateResponse toCreateResponse(CatalystDomain domain) {
-        List<String> industries = resolveIndustryNames(domain);
-
-        return new CatalystCreateResponse(
-                domain.getId(),
-                domain.getTitle(),
-                domain.getContent(),
-                domain.getStatus().name(),
-                industries,
-                domain.getCreatedAt());
     }
 
     private CatalystInfoResponse toInfoResponse(CatalystDomain domain) {
