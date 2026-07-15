@@ -323,9 +323,8 @@ class CatalystServiceTest {
                     1L, 1L, "old title", "a".repeat(50), CatalystStatus.ACTIVE, List.of(1L), List.of(), 4, null, null,
                     LocalDateTime.now(), LocalDateTime.now(), null);
             given(catalystRepositoryAdapter.findByIdAndUserId(1L, 1L)).willReturn(Optional.of(domain));
-            given(catalystRepositoryAdapter.existsAllIndustries(List.of(2L))).willReturn(true);
             LocalDateTime updatedAt = LocalDateTime.now();
-            given(catalystRepositoryAdapter.persistBasicInfo(1L, "new title", "b".repeat(60))).willReturn(updatedAt);
+            given(catalystRepositoryAdapter.persistBasicInfo(domain)).willReturn(updatedAt);
             given(catalystRepositoryAdapter.findIndustryNamesByIds(List.of(2L))).willReturn(Map.of(2L, "Finance"));
 
             CatalystUpdateResponse response = catalystService.updateBasicInfo(
@@ -335,7 +334,7 @@ class CatalystServiceTest {
             assertThat(response.content()).hasSize(60);
             assertThat(response.industries()).containsExactly("Finance");
             assertThat(response.updatedAt()).isEqualTo(updatedAt);
-            verify(catalystRepositoryAdapter).replaceIndustries(1L, List.of(2L));
+            verify(catalystRepositoryAdapter).persistBasicInfo(domain);
         }
 
         @Test
@@ -356,15 +355,14 @@ class CatalystServiceTest {
                     1L, 1L, "title", "a".repeat(50), CatalystStatus.ACTIVE, List.of(1L), List.of(), 4, null, null,
                     LocalDateTime.now(), LocalDateTime.now(), null);
             given(catalystRepositoryAdapter.findByIdAndUserId(1L, 1L)).willReturn(Optional.of(domain));
-            given(catalystRepositoryAdapter.existsAllIndustries(List.of(999L))).willReturn(false);
+            given(catalystRepositoryAdapter.findIndustryNamesByIds(List.of(999L))).willReturn(Map.of());
 
             assertThatThrownBy(() -> catalystService.updateBasicInfo(1L, 1L, "title", "a".repeat(50), List.of(999L)))
                     .isInstanceOf(BusinessException.class)
                     .extracting(e -> ((BusinessException) e).getErrorCode())
                     .isEqualTo(GlobalErrorCode.INVALID_INPUT);
 
-            verify(catalystRepositoryAdapter, never()).persistBasicInfo(any(), any(), any());
-            verify(catalystRepositoryAdapter, never()).replaceIndustries(any(), any());
+            verify(catalystRepositoryAdapter, never()).persistBasicInfo(any(CatalystDomain.class));
         }
 
         @Test
@@ -380,8 +378,7 @@ class CatalystServiceTest {
                     .extracting(e -> ((BusinessException) e).getErrorCode())
                     .isEqualTo(GlobalErrorCode.INVALID_INPUT);
 
-            verify(catalystRepositoryAdapter, never()).persistBasicInfo(any(), any(), any());
-            verify(catalystRepositoryAdapter, never()).replaceIndustries(any(), any());
+            verify(catalystRepositoryAdapter, never()).persistBasicInfo(any(CatalystDomain.class));
         }
     }
 

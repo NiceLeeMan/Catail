@@ -83,15 +83,16 @@ public class CatalystRepositoryAdapter {
         return catalystRepository.saveAndFlush(entity).getUpdatedAt();
     }
 
-    public LocalDateTime persistBasicInfo(Long catalystId, String title, String content) {
-        Catalyst entity = catalystRepository.findById(catalystId)
-                .orElseThrow(() -> new IllegalStateException("Catalyst not found: " + catalystId));
-        entity.setTitle(title);
-        entity.setContent(content);
+    public LocalDateTime persistBasicInfo(CatalystDomain domain) {
+        Catalyst entity = catalystRepository.findById(domain.getId())
+                .orElseThrow(() -> new IllegalStateException("Catalyst not found: " + domain.getId()));
+        entity.setTitle(domain.getTitle());
+        entity.setContent(domain.getContent());
+        replaceIndustries(domain.getId(), domain.getIndustryIds());
         return catalystRepository.saveAndFlush(entity).getUpdatedAt();
     }
 
-    public void replaceIndustries(Long catalystId, List<Long> industryIds) {
+    private void replaceIndustries(Long catalystId, List<Long> industryIds) {
         catalystIndustryRepository.deleteByCatalystId(catalystId);
         // deleteByCatalystId는 영속성 컨텍스트에 삭제를 예약할 뿐이라, flush 없이 두면
         // Hibernate가 flush 시 INSERT를 DELETE보다 먼저 실행해 겹치는 industryId에서
