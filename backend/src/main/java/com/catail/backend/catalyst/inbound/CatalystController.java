@@ -3,7 +3,8 @@ package com.catail.backend.catalyst.inbound;
 import com.catail.backend.catalyst.inbound.create.CatalystCreateResponse;
 import com.catail.backend.catalyst.inbound.delete.CatalystDeleteResponse;
 import com.catail.backend.catalyst.inbound.read.CatalystInfoResponse;
-import com.catail.backend.catalyst.inbound.read.CatalystListItemResponse;
+import com.catail.backend.catalyst.inbound.read.CatalystListResponse;
+import com.catail.backend.catalyst.application.CatalystListService;
 import com.catail.backend.catalyst.application.CatalystService;
 import com.catail.backend.catalyst.inbound.update.CatalystStatusResponse;
 import com.catail.backend.catalyst.inbound.update.CatalystUpdateResponse;
@@ -11,7 +12,6 @@ import com.catail.backend.catalyst.inbound.update.ChangeCatalystStatusRequest;
 import com.catail.backend.catalyst.inbound.create.CreateCatalystRequest;
 import com.catail.backend.catalyst.inbound.update.UpdateCatalystBasicInfoRequest;
 import com.catail.backend.global.ApiResponse;
-import com.catail.backend.global.PageResponse;
 import com.catail.backend.global.web.CurrentUserId;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -37,6 +37,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class CatalystController {
 
     private final CatalystService catalystService;
+    private final CatalystListService catalystListService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<CatalystCreateResponse>> create(
@@ -50,11 +51,11 @@ public class CatalystController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<CatalystListItemResponse>>> getList(
+    public ResponseEntity<ApiResponse<CatalystListResponse>> getList(
             @CurrentUserId Long userId,
             @RequestParam(defaultValue = "0") @Min(0) int page) {
 
-        return ResponseEntity.ok(ApiResponse.ok(catalystService.getList(userId, page)));
+        return ResponseEntity.ok(ApiResponse.ok(catalystListService.getList(userId, page)));
     }
 
     @GetMapping("/{id}")

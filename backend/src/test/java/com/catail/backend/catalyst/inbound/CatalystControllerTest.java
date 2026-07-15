@@ -4,9 +4,11 @@ import com.catail.backend.catalyst.application.CatalystBasicInfo;
 import com.catail.backend.catalyst.inbound.create.CatalystCreateResponse;
 import com.catail.backend.catalyst.inbound.delete.CatalystDeleteResponse;
 import com.catail.backend.catalyst.inbound.read.CatalystInfoResponse;
-import com.catail.backend.catalyst.inbound.read.CatalystListItemResponse;
+import com.catail.backend.catalyst.inbound.read.CatalystListItem;
+import com.catail.backend.catalyst.inbound.read.CatalystListResponse;
 import com.catail.backend.catalyst.application.CatalystMonitoringOperation;
 import com.catail.backend.catalyst.application.CatalystService;
+import com.catail.backend.catalyst.application.CatalystListService;
 import com.catail.backend.catalyst.inbound.update.CatalystStatusResponse;
 import com.catail.backend.catalyst.inbound.update.CatalystUpdateResponse;
 import com.catail.backend.catalyst.inbound.update.ChangeCatalystStatusRequest;
@@ -14,7 +16,6 @@ import com.catail.backend.catalyst.inbound.create.CreateCatalystRequest;
 import com.catail.backend.catalyst.inbound.update.UpdateCatalystBasicInfoRequest;
 import com.catail.backend.global.BusinessException;
 import com.catail.backend.global.GlobalErrorCode;
-import com.catail.backend.global.PageResponse;
 import com.catail.backend.catalyst.application.CatalystErrorCode;
 import com.catail.backend.global.jwt.JwtAuthenticationFilter;
 import com.catail.backend.global.web.CurrentUserIdArgumentResolver;
@@ -64,6 +65,7 @@ class CatalystControllerTest {
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @MockitoBean private CatalystService catalystService;
+    @MockitoBean private CatalystListService catalystListService;
     @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
     @MockitoBean private CurrentUserIdArgumentResolver currentUserIdArgumentResolver;
 
@@ -147,11 +149,11 @@ class CatalystControllerTest {
         @Test
         @DisplayName("기본 page=0으로 목록을 조회하면 200과 페이지 정보를 반환한다")
         void getList_defaultPage_returns200() throws Exception {
-            CatalystListItemResponse item = new CatalystListItemResponse(
+            CatalystListItem item = new CatalystListItem(
                     1L, "제목", "ACTIVE", List.of("IT"), 0, LocalDateTime.now());
-            PageResponse<CatalystListItemResponse> page =
-                    new PageResponse<>(List.of(item), 0, 20, 1, 1, false);
-            given(catalystService.getList(1L, 0)).willReturn(page);
+            CatalystListResponse response =
+                    new CatalystListResponse(List.of(item), 0, 20, 1, 1, false);
+            given(catalystListService.getList(1L, 0)).willReturn(response);
 
             mockMvc.perform(get("/api/catalysts"))
                     .andExpect(status().isOk())
