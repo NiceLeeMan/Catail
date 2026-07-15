@@ -3,7 +3,7 @@ package com.catail.backend.catalyst.inbound;
 import com.catail.backend.catalyst.inbound.create.CatalystCreateResponse;
 import com.catail.backend.catalyst.inbound.delete.CatalystDeleteResponse;
 import com.catail.backend.catalyst.inbound.read.CatalystInfoResponse;
-import com.catail.backend.catalyst.inbound.read.CatalystListItemResponse;
+import com.catail.backend.catalyst.inbound.read.CatalystListResponse;
 import com.catail.backend.catalyst.application.CatalystService;
 import com.catail.backend.catalyst.inbound.update.CatalystStatusResponse;
 import com.catail.backend.catalyst.inbound.update.CatalystUpdateResponse;
@@ -11,7 +11,6 @@ import com.catail.backend.catalyst.inbound.update.ChangeCatalystStatusRequest;
 import com.catail.backend.catalyst.inbound.create.CreateCatalystRequest;
 import com.catail.backend.catalyst.inbound.update.UpdateCatalystBasicInfoRequest;
 import com.catail.backend.global.ApiResponse;
-import com.catail.backend.global.PageResponse;
 import com.catail.backend.global.web.CurrentUserId;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
@@ -50,7 +49,7 @@ public class CatalystController {
     }
 
     @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<CatalystListItemResponse>>> getList(
+    public ResponseEntity<ApiResponse<CatalystListResponse>> getList(
             @CurrentUserId Long userId,
             @RequestParam(defaultValue = "0") @Min(0) int page) {
 

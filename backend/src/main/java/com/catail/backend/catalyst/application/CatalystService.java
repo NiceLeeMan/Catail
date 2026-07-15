@@ -6,13 +6,13 @@ import com.catail.backend.catalyst.domain.CatalystDomain;
 import com.catail.backend.catalyst.inbound.create.CatalystCreateResponse;
 import com.catail.backend.catalyst.inbound.delete.CatalystDeleteResponse;
 import com.catail.backend.catalyst.inbound.read.CatalystInfoResponse;
-import com.catail.backend.catalyst.inbound.read.CatalystListItemResponse;
+import com.catail.backend.catalyst.inbound.read.CatalystListItem;
+import com.catail.backend.catalyst.inbound.read.CatalystListResponse;
 import com.catail.backend.catalyst.inbound.update.CatalystStatusResponse;
 import com.catail.backend.catalyst.inbound.update.CatalystUpdateResponse;
 import com.catail.backend.catalyst.outbound.SignalCollectionPort;
 import com.catail.backend.global.BusinessException;
 import com.catail.backend.global.GlobalErrorCode;
-import com.catail.backend.global.PageResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -55,28 +55,39 @@ public class CatalystService {
 
     // UC-2: 카탈리스트 목록 조회
     @Transactional(readOnly = true)
-    public PageResponse<CatalystListItemResponse> getList(Long userId, int page) {
+    public CatalystListResponse getList(Long userId, int page) {
         Pageable pageable = PageRequest.of(page, PAGE_SIZE, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<CatalystDomain> result = catalystRepositoryAdapter.findPageByUserId(userId, pageable);
+        Page<CatalystDomain> catalystPage = catalystRepositoryAdapter.findPageByUserId(userId, pageable);
 
-        List<Long> allIndustryIds = result.getContent().stream()
-                .flatMap(domain -> domain.getIndustryIds().stream())
+        List<Long> distinctIndustryIds = catalystPage.getContent().stream()
+                .flatMap(catalyst -> catalyst.getIndustryIds().stream())
                 .distinct()
                 .toList();
-        Map<Long, String> industryNames = catalystRepositoryAdapter.findIndustryNamesByIds(allIndustryIds);
+        Map<Long, String> industryNamesById =
+                catalystRepositoryAdapter.findIndustryNamesByIds(distinctIndustryIds);
 
-        List<Long> catalystIds = result.getContent().stream().map(CatalystDomain::getId).toList();
-        Map<Long, Integer> pendingCounts = catalystRepositoryAdapter.countPendingSignalsByCatalystIds(catalystIds);
+        List<Long> catalystIds = catalystPage.getContent().stream()
+                .map(CatalystDomain::getId)
+                .toList();
+        Map<Long, Integer> pendingSignalCountsByCatalystId =
+                catalystRepositoryAdapter.countPendingSignalsByCatalystIds(catalystIds);
 
-        Page<CatalystListItemResponse> mapped = result.map(domain -> new CatalystListItemResponse(
-                domain.getId(),
-                domain.getTitle(),
-                domain.getStatus().name(),
-                domain.getIndustryIds().stream().map(industryNames::get).toList(),
-                pendingCounts.getOrDefault(domain.getId(), 0),
-                domain.getCreatedAt()));
+        List<CatalystListItem> items = catalystPage.getContent().stream()
+                .map(catalyst -> CatalystListItem.from(
+                        catalyst,
+                        catalyst.getIndustryIds().stream().map(industryNamesById::get).toList(),
+                        pendingSignalCountsByCatalystId.getOrDefault(catalyst.getId(), 0)
+                ))
+                .toList();
 
-        return PageResponse.of(mapped);
+        return new CatalystListResponse(
+                items,
+                catalystPage.getNumber(),
+                catalystPage.getSize(),
+                catalystPage.getTotalElements(),
+                catalystPage.getTotalPages(),
+                catalystPage.hasNext()
+        );
     }
 
     // UC-3: 카탈리스트 상세 조회 (카탈리스트 정보 탭)

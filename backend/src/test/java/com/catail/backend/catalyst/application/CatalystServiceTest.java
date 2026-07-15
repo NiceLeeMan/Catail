@@ -6,7 +6,7 @@ import com.catail.backend.catalyst.domain.CatalystDomain;
 import com.catail.backend.catalyst.inbound.create.CatalystCreateResponse;
 import com.catail.backend.catalyst.inbound.delete.CatalystDeleteResponse;
 import com.catail.backend.catalyst.inbound.read.CatalystInfoResponse;
-import com.catail.backend.catalyst.inbound.read.CatalystListItemResponse;
+import com.catail.backend.catalyst.inbound.read.CatalystListItem;
 import com.catail.backend.catalyst.inbound.update.CatalystStatusResponse;
 import com.catail.backend.catalyst.inbound.update.CatalystUpdateResponse;
 import com.catail.backend.catalyst.outbound.SignalCollectionPort;
@@ -134,7 +134,7 @@ class CatalystServiceTest {
             var response = catalystService.getList(1L, 0);
 
             assertThat(response.items()).hasSize(1);
-            CatalystListItemResponse item = response.items().get(0);
+            CatalystListItem item = response.items().get(0);
             assertThat(item.industryTags()).containsExactly("IT", "Finance");
             assertThat(item.pendingSignalCount()).isZero();
             assertThat(response.totalElements()).isEqualTo(1);
