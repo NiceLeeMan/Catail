@@ -68,7 +68,6 @@ class CatalystServiceTest {
         @Test
         @DisplayName("status가 ACTIVE로 생성되면 저장 후 시그널 수집 트리거가 호출된다")
         void create_activeStatus_triggersSignalCollection() {
-            given(catalystRepositoryAdapter.existsAllIndustries(List.of(1L))).willReturn(true);
             CatalystDomain saved = CatalystDomain.reconstruct(
                     10L, 1L, "title", "a".repeat(50), CatalystStatus.ACTIVE, List.of(1L), List.of(), 4, null, null,
                     LocalDateTime.now(), LocalDateTime.now(), null);
@@ -86,7 +85,6 @@ class CatalystServiceTest {
         @Test
         @DisplayName("status가 INACTIVE로 생성되면 시그널 수집 트리거가 호출되지 않는다")
         void create_inactiveStatus_doesNotTriggerSignalCollection() {
-            given(catalystRepositoryAdapter.existsAllIndustries(List.of(1L))).willReturn(true);
             CatalystDomain saved = CatalystDomain.reconstruct(
                     11L, 1L, "title", "a".repeat(50), CatalystStatus.INACTIVE, List.of(1L), List.of(), 4, null, null,
                     LocalDateTime.now(), LocalDateTime.now(), null);
@@ -101,7 +99,7 @@ class CatalystServiceTest {
         @Test
         @DisplayName("존재하지 않는 industryId가 포함되면 INVALID_INPUT 예외가 발생하고 저장/트리거가 호출되지 않는다")
         void create_nonExistentIndustryId_throwsInvalidInputAndSkipsSaveAndTrigger() {
-            given(catalystRepositoryAdapter.existsAllIndustries(List.of(999L))).willReturn(false);
+            given(catalystRepositoryAdapter.findIndustryNamesByIds(List.of(999L))).willReturn(Map.of());
 
             assertThatThrownBy(() -> catalystService.create(1L, "title", "a".repeat(50), List.of(999L), "ACTIVE"))
                     .isInstanceOf(BusinessException.class)

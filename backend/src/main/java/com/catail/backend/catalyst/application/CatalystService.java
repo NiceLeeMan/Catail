@@ -32,7 +32,8 @@ public class CatalystService {
                                          List<Long> industryIds, String status) {
         CatalystDomain domain = CatalystDomain.create(userId, title, content, industryIds, status);
 
-        if (!catalystRepositoryAdapter.existsAllIndustries(domain.getIndustryIds())) {
+        Map<Long, String> industryNames = catalystRepositoryAdapter.findIndustryNamesByIds(domain.getIndustryIds());
+        if (industryNames.size() != domain.getIndustryIds().size()) {
             throw new BusinessException(GlobalErrorCode.INVALID_INPUT);
         }
 
@@ -42,7 +43,10 @@ public class CatalystService {
             signalCollectionPort.triggerCollection(saved.getId());
         }
 
-        return toCreateResponse(saved);
+        List<String> industries = saved.getIndustryIds().stream()
+                .map(industryNames::get)
+                .toList();
+        return CatalystCreateResponse.from(saved, industries);
     }
 
     // UC-3: 카탈리스트 상세 조회 (카탈리스트 정보 탭)
@@ -106,18 +110,6 @@ public class CatalystService {
         } catch (IllegalArgumentException | NullPointerException e) {
             throw new BusinessException(GlobalErrorCode.INVALID_INPUT);
         }
-    }
-
-    private CatalystCreateResponse toCreateResponse(CatalystDomain domain) {
-        List<String> industries = resolveIndustryNames(domain);
-
-        return new CatalystCreateResponse(
-                domain.getId(),
-                domain.getTitle(),
-                domain.getContent(),
-                domain.getStatus().name(),
-                industries,
-                domain.getCreatedAt());
     }
 
     private CatalystInfoResponse toInfoResponse(CatalystDomain domain) {
