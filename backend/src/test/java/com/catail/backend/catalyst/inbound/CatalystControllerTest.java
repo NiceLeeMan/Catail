@@ -1,17 +1,17 @@
 package com.catail.backend.catalyst.inbound;
 
 import com.catail.backend.catalyst.application.CatalystBasicInfo;
-import com.catail.backend.catalyst.application.CatalystCreateResponse;
-import com.catail.backend.catalyst.application.CatalystDeleteResponse;
-import com.catail.backend.catalyst.application.CatalystInfoResponse;
-import com.catail.backend.catalyst.application.CatalystListItemResponse;
+import com.catail.backend.catalyst.inbound.create.CatalystCreateResponse;
+import com.catail.backend.catalyst.inbound.delete.CatalystDeleteResponse;
+import com.catail.backend.catalyst.inbound.read.CatalystInfoResponse;
+import com.catail.backend.catalyst.inbound.read.CatalystListItemResponse;
 import com.catail.backend.catalyst.application.CatalystMonitoringOperation;
 import com.catail.backend.catalyst.application.CatalystService;
-import com.catail.backend.catalyst.application.CatalystStatusResponse;
-import com.catail.backend.catalyst.application.CatalystUpdateResponse;
-import com.catail.backend.catalyst.application.ChangeCatalystStatusRequest;
-import com.catail.backend.catalyst.application.CreateCatalystRequest;
-import com.catail.backend.catalyst.application.UpdateCatalystBasicInfoRequest;
+import com.catail.backend.catalyst.inbound.update.CatalystStatusResponse;
+import com.catail.backend.catalyst.inbound.update.CatalystUpdateResponse;
+import com.catail.backend.catalyst.inbound.update.ChangeCatalystStatusRequest;
+import com.catail.backend.catalyst.inbound.create.CreateCatalystRequest;
+import com.catail.backend.catalyst.inbound.update.UpdateCatalystBasicInfoRequest;
 import com.catail.backend.global.BusinessException;
 import com.catail.backend.global.GlobalErrorCode;
 import com.catail.backend.global.PageResponse;

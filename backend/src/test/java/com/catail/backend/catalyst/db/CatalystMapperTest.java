@@ -1,6 +1,7 @@
-package com.catail.backend.catalyst.DB;
+package com.catail.backend.catalyst.db;
 
 import com.catail.backend.catalyst.domain.CatalystDomain;
+import com.catail.backend.catalyst.domain.CatalystStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;

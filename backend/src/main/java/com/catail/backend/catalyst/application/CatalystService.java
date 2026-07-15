@@ -1,8 +1,14 @@
 package com.catail.backend.catalyst.application;
 
-import com.catail.backend.catalyst.DB.CatalystRepositoryAdapter;
-import com.catail.backend.catalyst.DB.CatalystStatus;
+import com.catail.backend.catalyst.db.CatalystRepositoryAdapter;
+import com.catail.backend.catalyst.domain.CatalystStatus;
 import com.catail.backend.catalyst.domain.CatalystDomain;
+import com.catail.backend.catalyst.inbound.create.CatalystCreateResponse;
+import com.catail.backend.catalyst.inbound.delete.CatalystDeleteResponse;
+import com.catail.backend.catalyst.inbound.read.CatalystInfoResponse;
+import com.catail.backend.catalyst.inbound.read.CatalystListItemResponse;
+import com.catail.backend.catalyst.inbound.update.CatalystStatusResponse;
+import com.catail.backend.catalyst.inbound.update.CatalystUpdateResponse;
 import com.catail.backend.catalyst.outbound.SignalCollectionPort;
 import com.catail.backend.global.BusinessException;
 import com.catail.backend.global.GlobalErrorCode;
@@ -31,7 +37,7 @@ public class CatalystService {
     // UC-1: 카탈리스트 생성
     @Transactional
     public CatalystCreateResponse create(Long userId, String title, String content,
-                                          List<Long> industryIds, String status) {
+                                         List<Long> industryIds, String status) {
         CatalystDomain domain = CatalystDomain.create(userId, title, content, industryIds, status);
 
         if (!catalystRepositoryAdapter.existsAllIndustries(domain.getIndustryIds())) {
@@ -94,7 +100,7 @@ public class CatalystService {
     // UC-5: 기본정보 수정
     @Transactional
     public CatalystUpdateResponse updateBasicInfo(Long id, Long userId, String title, String content,
-                                                   List<Long> industryIds) {
+                                                  List<Long> industryIds) {
         CatalystDomain domain = catalystRepositoryAdapter.findByIdAndUserId(id, userId)
                 .orElseThrow(() -> new BusinessException(CatalystErrorCode.NOT_FOUND));
 

@@ -1,7 +1,7 @@
 package com.catail.backend.catalyst.inbound;
 
-import com.catail.backend.catalyst.DB.Industry;
-import com.catail.backend.catalyst.DB.IndustryRepository;
+import com.catail.backend.catalyst.db.Industry;
+import com.catail.backend.catalyst.db.IndustryRepository;
 import com.catail.backend.global.jwt.JwtAuthenticationFilter;
 import com.catail.backend.global.web.CurrentUserIdArgumentResolver;
 import jakarta.servlet.FilterChain;
