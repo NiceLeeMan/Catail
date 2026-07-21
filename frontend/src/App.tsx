@@ -7,6 +7,7 @@ import { HomePage } from './pages/HomePage';
 import { CatalystListPage } from './pages/CatalystListPage';
 import { CatalystCreatePage } from './pages/CatalystCreatePage';
 import { CatalystDetailPage } from './pages/CatalystDetailPage';
+import { CompanyListPage } from './pages/CompanyListPage';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
           <Route path="/auth/callback" element={<OAuthCallbackPage />} />
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<HomePage />} />
+            <Route path="/companies" element={<CompanyListPage />} />
             <Route path="/catalysts" element={<CatalystListPage />} />
             <Route path="/catalysts/new" element={<CatalystCreatePage />} />
             <Route path="/catalysts/:id" element={<CatalystDetailPage />} />

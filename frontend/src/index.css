@@ -26,4 +26,15 @@
   --shadow-card: 0px 2px 10px 0px #0e235014;
 
   --font-sans: 'Inter', system-ui, sans-serif;
+
+  --color-dark-bg-base: #0a1220;
+  --color-dark-bg-surface: #0f1a2e;
+  --color-dark-bg-card: #111d33;
+  --color-dark-bg-card-header: #16233d;
+  --color-dark-bg-badge: #113240;
+  --color-dark-border: #223354;
+  --color-dark-text-primary: #f5f7fa;
+  --color-dark-text-secondary: #8fa3c4;
+  --color-dark-text-muted: #5c7096;
+  --color-dark-accent: #22d3ee;
 }

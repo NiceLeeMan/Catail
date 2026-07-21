@@ -20,5 +20,5 @@ export function OAuthCallbackPage() {
   useAuthStore.getState().setAuth(accessToken, expiresAt);
   scheduleTokenRefresh(expiresAt);
 
-  return <Navigate to="/catalysts" replace />;
+  return <Navigate to="/companies" replace />;
 }
