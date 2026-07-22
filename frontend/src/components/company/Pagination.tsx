@@ -1,4 +1,4 @@
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
 
 interface PaginationProps {
   currentPage: number;
@@ -9,10 +9,23 @@ interface PaginationProps {
 export function Pagination({ currentPage, totalPages, onPageChange }: PaginationProps) {
   if (totalPages <= 1) return null;
 
-  const pages = Array.from({ length: totalPages }, (_, i) => i + 1);
+  const groupSize = 5;
+  const groupStart = Math.floor((currentPage - 1) / groupSize) * groupSize + 1;
+  const groupEnd = Math.min(groupStart + groupSize - 1, totalPages);
+  const pages = Array.from({ length: groupEnd - groupStart + 1 }, (_, i) => groupStart + i);
 
   return (
     <nav className="box-border flex w-full items-center justify-center gap-2">
+      <button
+        type="button"
+        onClick={() => onPageChange(groupStart - 1)}
+        disabled={groupStart === 1}
+        aria-label="이전 그룹"
+        className="box-border flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-dark-border bg-dark-bg-card text-dark-text-secondary disabled:cursor-not-allowed disabled:opacity-40 hover:bg-dark-bg-card-header"
+      >
+        <ChevronsLeft className="h-4 w-4" />
+      </button>
+
       <button
         type="button"
         onClick={() => onPageChange(currentPage - 1)}
@@ -47,6 +60,16 @@ export function Pagination({ currentPage, totalPages, onPageChange }: Pagination
         className="box-border flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-dark-border bg-dark-bg-card text-dark-text-secondary disabled:cursor-not-allowed disabled:opacity-40 hover:bg-dark-bg-card-header"
       >
         <ChevronRight className="h-4 w-4" />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => onPageChange(groupEnd + 1)}
+        disabled={groupEnd === totalPages}
+        aria-label="다음 그룹"
+        className="box-border flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-dark-border bg-dark-bg-card text-dark-text-secondary disabled:cursor-not-allowed disabled:opacity-40 hover:bg-dark-bg-card-header"
+      >
+        <ChevronsRight className="h-4 w-4" />
       </button>
     </nav>
   );

@@ -38,3 +38,34 @@
   --color-dark-text-muted: #5c7096;
   --color-dark-accent: #22d3ee;
 }
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(100px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(40px);
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    var(--color-dark-bg-card-header) 25%,
+    var(--color-dark-border) 50%,
+    var(--color-dark-bg-card-header) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}

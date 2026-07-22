@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
 import { AuthInitializer } from './components/AuthInitializer';
+import { ScrollToTop } from './components/ScrollToTop';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { LoginPage } from './pages/LoginPage';
 import { OAuthCallbackPage } from './pages/OAuthCallbackPage';
@@ -13,6 +14,7 @@ import { CompanyDetailPage } from './pages/CompanyDetailPage';
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <AuthInitializer>
         <Routes>
           <Route path="/login" element={<LoginPage />} />

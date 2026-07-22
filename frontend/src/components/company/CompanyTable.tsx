@@ -51,7 +51,7 @@ export function CompanyTable({ items, onRowClick }: CompanyTableProps) {
           key={company.id}
           type="button"
           onClick={() => onRowClick(company)}
-          className="box-border flex h-16 w-full shrink-0 items-center gap-5 border-b border-dark-border px-7 text-left last:border-b-0 hover:bg-dark-bg-card-header"
+          className="group box-border flex h-16 w-full shrink-0 items-center gap-5 border-b border-dark-border px-7 text-left transition-colors duration-150 last:border-b-0 hover:bg-dark-bg-card-header"
         >
           <div className="flex w-[340px] shrink-0 items-center gap-3.5">
             <CompanyAvatar company={company} />
@@ -65,7 +65,7 @@ export function CompanyTable({ items, onRowClick }: CompanyTableProps) {
           <div className="flex-1 text-[14px] font-normal leading-normal text-dark-text-secondary">
             {company.industryName ?? '-'}
           </div>
-          <ChevronRight className="h-[18px] w-[18px] shrink-0 text-dark-text-muted" />
+          <ChevronRight className="h-[18px] w-[18px] shrink-0 text-dark-text-muted transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-dark-text-secondary" />
         </button>
       ))}
     </div>
