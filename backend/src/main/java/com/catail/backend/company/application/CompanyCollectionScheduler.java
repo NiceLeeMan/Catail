@@ -16,6 +16,7 @@ import org.springframework.stereotype.Component;
 public class CompanyCollectionScheduler implements ApplicationRunner {
 
     private final CompanyCollectionService companyCollectionService;
+    private final CompanyOpenDartMappingService companyOpenDartMappingService;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -26,6 +27,7 @@ public class CompanyCollectionScheduler implements ApplicationRunner {
     public void collectKospi() {
         try {
             companyCollectionService.collect(Market.KOSPI);
+            companyOpenDartMappingService.mapKospiCorpCodes();
         } catch (Exception e) {
             log.error("코스피 상장기업 수집 실패", e);
         }
