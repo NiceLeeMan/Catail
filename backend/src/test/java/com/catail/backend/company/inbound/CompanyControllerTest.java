@@ -1,7 +1,9 @@
 package com.catail.backend.company.inbound;
 
+import com.catail.backend.company.application.CompanyDetailService;
 import com.catail.backend.company.application.CompanyErrorCode;
 import com.catail.backend.company.application.CompanyListService;
+import com.catail.backend.company.inbound.read.CompanyDetailResponse;
 import com.catail.backend.company.inbound.read.CompanyListItem;
 import com.catail.backend.company.inbound.read.CompanyListResponse;
 import com.catail.backend.global.BusinessException;
@@ -46,6 +48,7 @@ class CompanyControllerTest {
     @Autowired private WebApplicationContext context;
 
     @MockitoBean private CompanyListService companyListService;
+    @MockitoBean private CompanyDetailService companyDetailService;
     @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @BeforeEach
@@ -135,6 +138,49 @@ class CompanyControllerTest {
         void getList_negativePage_returns400() throws Exception {
             mockMvc.perform(get("/api/companies").param("market", "KOSPI").param("page", "-1"))
                     .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("GET /api/companies/{companyId}")
+    class GetDetail {
+
+        @Test
+        @DisplayName("존재하는 기업이면 200과 상세정보를 반환한다")
+        void getDetail_existing_returns200() throws Exception {
+            CompanyDetailResponse response = new CompanyDetailResponse(1L, "KOSPI", "005930", "삼성전자", "반도체", null);
+            given(companyDetailService.getDetail(1L)).willReturn(response);
+
+            mockMvc.perform(get("/api/companies/{companyId}", 1L))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.companyName").value("삼성전자"))
+                    .andDo(document("company/detail",
+                            responseFields(
+                                    fieldWithPath("success").description("성공 여부"),
+                                    fieldWithPath("data.id").description("기업 ID"),
+                                    fieldWithPath("data.market").description("상장시장"),
+                                    fieldWithPath("data.stockCode").description("종목코드"),
+                                    fieldWithPath("data.companyName").description("기업명"),
+                                    fieldWithPath("data.industryName").description("업종명")
+                                            .optional().type(JsonFieldType.STRING),
+                                    fieldWithPath("data.logoUrl").description("로고 URL")
+                                            .optional().type(JsonFieldType.NULL),
+                                    fieldWithPath("error").description("에러 정보 (성공 시 null)")
+                                            .optional().type(JsonFieldType.NULL)
+                            )
+                    ));
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 기업이면 404를 반환한다")
+        void getDetail_notFound_returns404() throws Exception {
+            given(companyDetailService.getDetail(999L))
+                    .willThrow(new BusinessException(CompanyErrorCode.COMPANY_NOT_FOUND));
+
+            mockMvc.perform(get("/api/companies/{companyId}", 999L))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error.code").value("COMPANY_004"));
         }
     }
 }
