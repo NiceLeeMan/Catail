@@ -44,6 +44,9 @@ public class Company {
     @Column(name = "logo_url", columnDefinition = "TEXT")
     private String logoUrl;
 
+    @Column(name = "open_dart_corp_code", unique = true, length = 20)
+    private String openDartCorpCode;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -62,5 +65,9 @@ public class Company {
 
     public void updateCompanyName(String companyName) {
         this.companyName = companyName;
+    }
+
+    public void assignOpenDartCorpCode(String openDartCorpCode) {
+        this.openDartCorpCode = openDartCorpCode;
     }
 }

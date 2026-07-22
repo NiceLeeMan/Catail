@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.JpaRepository;
 
+import java.util.List;
 import java.util.Optional;
 
 public interface CompanyRepository extends JpaRepository<Company, Long> {
@@ -14,6 +15,10 @@ public interface CompanyRepository extends JpaRepository<Company, Long> {
     Optional<Company> findByMarketAndStockCode(Market market, String stockCode);
 
     Page<Company> findByMarket(Market market, Pageable pageable);
+
+    List<Company> findByMarketAndOpenDartCorpCodeIsNull(Market market);
+
+    List<Company> findByMarketAndOpenDartCorpCodeIsNotNull(Market market);
 
     @Query("SELECT c FROM Company c WHERE c.market = :market "
             + "AND (c.companyName LIKE CONCAT('%', :keyword, '%') OR c.stockCode LIKE CONCAT('%', :keyword, '%'))")
