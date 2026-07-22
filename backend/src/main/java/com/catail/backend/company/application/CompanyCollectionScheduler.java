@@ -6,6 +6,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
+import org.springframework.core.annotation.Order;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -13,6 +14,7 @@ import org.springframework.stereotype.Component;
 @Component
 @Profile("!test")
 @RequiredArgsConstructor
+@Order(1) // DisclosureSyncScheduler가 corp_code 매핑 이후에 기동 시 실행되도록 순서 고정
 public class CompanyCollectionScheduler implements ApplicationRunner {
 
     private final CompanyCollectionService companyCollectionService;
