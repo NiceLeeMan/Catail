@@ -11,6 +11,7 @@ import { CompanyListError } from '../components/company/CompanyListError';
 import { CompanyEmptyState } from '../components/company/CompanyEmptyState';
 import { useCompaniesQuery } from '../hooks/useCompanies';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
+import { useCountUp } from '../hooks/useCountUp';
 import type { CompanyListItemResponse } from '../types/company';
 
 export function CompanyListPage() {
@@ -20,7 +21,8 @@ export function CompanyListPage() {
   const debouncedKeyword = useDebouncedValue(keyword, 300);
   const isSearching = debouncedKeyword.trim().length > 0;
 
-  const { data, isLoading, isError } = useCompaniesQuery(currentPage, debouncedKeyword);
+  const { data, isLoading, isFetching, isError } = useCompaniesQuery(currentPage, debouncedKeyword);
+  const displayedCount = useCountUp(data?.totalElements ?? 0);
 
   const handleKeywordChange = (value: string) => {
     setKeyword(value);
@@ -43,11 +45,11 @@ export function CompanyListPage() {
               <TrendingUp className="h-4 w-4 text-dark-accent" />
             </div>
             <span className="text-[17px] font-semibold leading-normal text-dark-text-primary">
-              코스피 상장기업
+              KOSPI
             </span>
           </div>
           <span className="text-[14px] font-normal leading-normal text-dark-text-secondary">
-            총 {data?.totalElements ?? 0}건
+            총 {displayedCount}건
           </span>
         </div>
 
@@ -60,14 +62,18 @@ export function CompanyListPage() {
         ) : data.items.length === 0 ? (
           <CompanyEmptyState isSearching={isSearching} />
         ) : (
-          <>
+          <div
+            className={`flex w-full flex-col gap-6 transition-opacity duration-200 ${
+              isFetching ? 'opacity-50' : 'opacity-100'
+            }`}
+          >
             <CompanyTable items={data.items} onRowClick={handleRowClick} />
             <Pagination
               currentPage={currentPage}
               totalPages={data.totalPages}
               onPageChange={setCurrentPage}
             />
-          </>
+          </div>
         )}
       </main>
     </div>
