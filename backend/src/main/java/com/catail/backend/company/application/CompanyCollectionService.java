@@ -76,8 +76,10 @@ public class CompanyCollectionService {
         companyRepository.findByMarketAndStockCode(item.market(), item.stockCode())
                 .ifPresentOrElse(
                         existing -> {
-                            existing.updateCompanyName(item.companyName());
-                            companyRepository.save(existing);
+                            if (!existing.getCompanyName().equals(item.companyName())) {
+                                existing.updateCompanyName(item.companyName());
+                                companyRepository.save(existing);
+                            }
                         },
                         () -> companyRepository.save(
                                 Company.create(item.market(), item.stockCode(), item.companyName()))

@@ -87,13 +87,17 @@ public class DisclosureSyncService {
         Disclosure disclosure;
         if (existing.isPresent()) {
             disclosure = existing.get();
-            disclosure.updateContent(item.reportName(), item.submitterName());
+            boolean changed = !disclosure.getReportName().equals(item.reportName())
+                    || !disclosure.getSubmitterName().equals(item.submitterName());
+            if (changed) {
+                disclosure.updateContent(item.reportName(), item.submitterName());
+                disclosureRepository.save(disclosure);
+            }
         } else {
-            disclosure = Disclosure.create(
+            disclosure = disclosureRepository.save(Disclosure.create(
                     companyId, provider, item.externalDisclosureId(),
-                    item.receivedDate(), item.reportName(), item.submitterName());
+                    item.receivedDate(), item.reportName(), item.submitterName()));
         }
-        disclosure = disclosureRepository.save(disclosure);
 
         for (String code : item.remarkCodes()) {
             if (!disclosureRemarkRepository.existsByDisclosureIdAndCode(disclosure.getId(), code)) {
