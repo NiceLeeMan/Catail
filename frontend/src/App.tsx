@@ -8,6 +8,7 @@ import { CatalystListPage } from './pages/CatalystListPage';
 import { CatalystCreatePage } from './pages/CatalystCreatePage';
 import { CatalystDetailPage } from './pages/CatalystDetailPage';
 import { CompanyListPage } from './pages/CompanyListPage';
+import { CompanyDetailPage } from './pages/CompanyDetailPage';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/companies" element={<CompanyListPage />} />
+            <Route path="/companies/:companyId" element={<CompanyDetailPage />} />
             <Route path="/catalysts" element={<CatalystListPage />} />
             <Route path="/catalysts/new" element={<CatalystCreatePage />} />
             <Route path="/catalysts/:id" element={<CatalystDetailPage />} />
