@@ -3,6 +3,7 @@ package com.catail.backend.company.inbound.read;
 import com.catail.backend.company.db.Company;
 
 public record CompanyListItem(
+        Long id,
         String companyName,
         String stockCode,
         String market,
@@ -11,6 +12,7 @@ public record CompanyListItem(
 ) {
     public static CompanyListItem from(Company company) {
         return new CompanyListItem(
+                company.getId(),
                 company.getCompanyName(),
                 company.getStockCode(),
                 company.getMarket().name(),

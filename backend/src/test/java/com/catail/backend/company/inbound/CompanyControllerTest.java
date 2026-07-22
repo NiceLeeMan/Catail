@@ -70,19 +70,21 @@ class CompanyControllerTest {
         @Test
         @DisplayName("market=KOSPI로 조회하면 200과 기업 목록을 반환한다")
         void getList_kospi_returns200() throws Exception {
-            CompanyListItem item = new CompanyListItem("삼성전자", "005930", "KOSPI", "반도체", null);
+            CompanyListItem item = new CompanyListItem(1L, "삼성전자", "005930", "KOSPI", "반도체", null);
             CompanyListResponse response = new CompanyListResponse(List.of(item), 0, 50, 1, 1, false);
             given(companyListService.getList("KOSPI", null, 0)).willReturn(response);
 
             mockMvc.perform(get("/api/companies").param("market", "KOSPI"))
                     .andExpect(status().isOk())
                     .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.items[0].id").value(1))
                     .andExpect(jsonPath("$.data.items[0].companyName").value("삼성전자"))
                     .andExpect(jsonPath("$.data.totalElements").value(1))
                     .andDo(document("company/list",
                             responseFields(
                                     fieldWithPath("success").description("성공 여부"),
                                     fieldWithPath("data.items").description("기업 목록"),
+                                    fieldWithPath("data.items[].id").description("기업 ID"),
                                     fieldWithPath("data.items[].companyName").description("기업명"),
                                     fieldWithPath("data.items[].stockCode").description("종목코드"),
                                     fieldWithPath("data.items[].market").description("상장시장"),

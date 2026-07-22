@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TrendingUp } from 'lucide-react';
 import { CompanyPageHeader } from '../components/company/CompanyPageHeader';
 import { HeroBanner } from '../components/company/HeroBanner';
@@ -13,6 +14,7 @@ import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import type { CompanyListItemResponse } from '../types/company';
 
 export function CompanyListPage() {
+  const navigate = useNavigate();
   const [keyword, setKeyword] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const debouncedKeyword = useDebouncedValue(keyword, 300);
@@ -26,7 +28,7 @@ export function CompanyListPage() {
   };
 
   const handleRowClick = (company: CompanyListItemResponse) => {
-    console.log('company clicked', company.stockCode);
+    navigate(`/companies/${company.id}`);
   };
 
   return (

@@ -48,7 +48,7 @@ export function CompanyTable({ items, onRowClick }: CompanyTableProps) {
 
       {items.map((company) => (
         <button
-          key={company.stockCode}
+          key={company.id}
           type="button"
           onClick={() => onRowClick(company)}
           className="box-border flex h-16 w-full shrink-0 items-center gap-5 border-b border-dark-border px-7 text-left last:border-b-0 hover:bg-dark-bg-card-header"
