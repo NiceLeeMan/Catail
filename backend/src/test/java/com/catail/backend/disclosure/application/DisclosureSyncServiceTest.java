@@ -186,5 +186,31 @@ class DisclosureSyncServiceTest {
             assertThat(existing.getReportName()).isEqualTo("정정 보고서");
             verify(disclosureRemarkRepository, never()).save(any(DisclosureRemark.class));
         }
+
+        @Test
+        @DisplayName("이미 존재하는 공시의 내용이 동일하면 저장하지 않는다")
+        void syncCompany_existingDisclosureUnchanged_doesNotSave() throws Exception {
+            Company company = companyWithId(1L, "00126380");
+            given(openDartPort.provider()).willReturn(DisclosureProvider.OPEN_DART);
+            given(disclosureSyncStatusRepository.findByCompanyIdAndProvider(1L, DisclosureProvider.OPEN_DART))
+                    .willReturn(Optional.empty());
+
+            RawDisclosureItem rawItem = new RawDisclosureItem(
+                    "20240101000123", LocalDate.of(2024, 1, 1), "주요사항보고서", "삼성전자", List.of("유"));
+            given(openDartPort.fetchPage(eq("00126380"), any(), any(), eq(1), eq(100)))
+                    .willReturn(new DisclosureCollectionPage(1, List.of(rawItem)));
+
+            Disclosure existing = Disclosure.create(1L, DisclosureProvider.OPEN_DART, "20240101000123",
+                    LocalDate.of(2024, 1, 1), "주요사항보고서", "삼성전자");
+            setId(existing, 10L);
+            given(disclosureRepository.findByProviderAndExternalDisclosureId(
+                    DisclosureProvider.OPEN_DART, "20240101000123"))
+                    .willReturn(Optional.of(existing));
+            given(disclosureRemarkRepository.existsByDisclosureIdAndCode(10L, "유")).willReturn(true);
+
+            disclosureSyncService.syncCompany(company);
+
+            verify(disclosureRepository, never()).save(any(Disclosure.class));
+        }
     }
 }

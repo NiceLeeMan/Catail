@@ -125,6 +125,25 @@ class CompanyCollectionServiceTest {
         }
 
         @Test
+        @DisplayName("이미 존재하는 기업이고 companyName이 동일하면 저장하지 않는다")
+        void collect_existingCompanyUnchanged_doesNotSave() {
+            given(krxPort.market()).willReturn(Market.KOSPI);
+            LocalDate today = LocalDate.now();
+            ListedCompanyItem item = new ListedCompanyItem(Market.KOSPI, "005930", "삼성전자");
+            given(krxPort.fetchPage(eq(today), eq(1), eq(1)))
+                    .willReturn(new ListedCompanyPage(1, List.of(item)));
+            given(krxPort.fetchPage(eq(today), eq(1), eq(1000)))
+                    .willReturn(new ListedCompanyPage(1, List.of(item)));
+            Company existing = Company.create(Market.KOSPI, "005930", "삼성전자");
+            given(companyRepository.findByMarketAndStockCode(Market.KOSPI, "005930"))
+                    .willReturn(Optional.of(existing));
+
+            companyCollectionService.collect(Market.KOSPI);
+
+            verify(companyRepository, never()).save(any(Company.class));
+        }
+
+        @Test
         @DisplayName("totalCount가 페이지 크기를 초과하면 다음 페이지까지 순회해 수집한다")
         void collect_multiplePages_fetchesAllPages() {
             given(krxPort.market()).willReturn(Market.KOSPI);
