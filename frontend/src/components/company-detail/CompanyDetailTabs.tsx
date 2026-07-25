@@ -1,8 +1,7 @@
-export type CompanyDetailTab = 'disclosure' | 'catalyst' | 'timeline' | 'signal';
+export type CompanyDetailTab = 'disclosure' | 'timeline' | 'signal';
 
 const TABS: { key: CompanyDetailTab; label: string; enabled: boolean }[] = [
   { key: 'disclosure', label: '공시', enabled: true },
-  { key: 'catalyst', label: '카탈리스트', enabled: false },
   { key: 'timeline', label: '타임라인', enabled: false },
   { key: 'signal', label: '시그널', enabled: false },
 ];

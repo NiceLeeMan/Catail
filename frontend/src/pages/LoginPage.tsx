@@ -80,7 +80,7 @@ export function LoginPage() {
               Catail에 오신 것을 환영합니다
             </h1>
             <p className="box-border w-full text-left text-[14px] font-normal leading-[21px] text-text-secondary">
-              관심 산업의 변화를 카탈리스트로 등록하고 지속적으로 추적해보세요
+              관심 기업의 공시와 변화를 놓치지 않고 추적해보세요
             </p>
           </div>
 
