@@ -30,13 +30,20 @@ public class CompanyCollectionService {
     public void collect(Market market) {
         ListedCompanyCollectionPort port = resolvePort(market);
         try {
-            LocalDate baseDate = resolveLatestAvailableBaseDate(port);
-            List<ListedCompanyItem> items = fetchAllItems(port, baseDate);
+            List<ListedCompanyItem> items = switch (port.mode()) {
+                case DATE_PAGED -> fetchAllItemsByDate(port);
+                case SNAPSHOT -> port.fetchSnapshot();
+            };
             items.forEach(this::upsert);
-            log.info("{} 상장기업 수집 완료: baseDate={}, count={}", market, baseDate, items.size());
+            log.info("{} 상장기업 수집 완료: count={}", market, items.size());
         } catch (ListedCompanyCollectionException e) {
             throw new BusinessException(CompanyErrorCode.COLLECTION_SOURCE_ERROR);
         }
+    }
+
+    private List<ListedCompanyItem> fetchAllItemsByDate(ListedCompanyCollectionPort port) {
+        LocalDate baseDate = resolveLatestAvailableBaseDate(port);
+        return fetchAllItems(port, baseDate);
     }
 
     private ListedCompanyCollectionPort resolvePort(Market market) {

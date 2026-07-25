@@ -1,6 +1,7 @@
 package com.catail.backend.company.outbound.krx;
 
 import com.catail.backend.company.domain.Market;
+import com.catail.backend.company.outbound.CollectionMode;
 import com.catail.backend.company.outbound.ListedCompanyCollectionException;
 import com.catail.backend.company.outbound.ListedCompanyCollectionPort;
 import com.catail.backend.company.outbound.ListedCompanyItem;
@@ -45,6 +46,11 @@ public class KrxListedCompanyAdapter implements ListedCompanyCollectionPort {
     @Override
     public Market market() {
         return Market.KOSPI;
+    }
+
+    @Override
+    public CollectionMode mode() {
+        return CollectionMode.DATE_PAGED;
     }
 
     @Override

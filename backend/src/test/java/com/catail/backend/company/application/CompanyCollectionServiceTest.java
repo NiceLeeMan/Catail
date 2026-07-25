@@ -3,6 +3,7 @@ package com.catail.backend.company.application;
 import com.catail.backend.company.db.Company;
 import com.catail.backend.company.db.CompanyRepository;
 import com.catail.backend.company.domain.Market;
+import com.catail.backend.company.outbound.CollectionMode;
 import com.catail.backend.company.outbound.ListedCompanyCollectionException;
 import com.catail.backend.company.outbound.ListedCompanyCollectionPort;
 import com.catail.backend.company.outbound.ListedCompanyItem;
@@ -23,8 +24,11 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -43,6 +47,7 @@ class CompanyCollectionServiceTest {
     @BeforeEach
     void setUp() {
         companyCollectionService = new CompanyCollectionService(List.of(krxPort), companyRepository);
+        lenient().when(krxPort.mode()).thenReturn(CollectionMode.DATE_PAGED);
     }
 
     @Nested
@@ -186,6 +191,25 @@ class CompanyCollectionServiceTest {
                     .isInstanceOf(BusinessException.class)
                     .extracting(e -> ((BusinessException) e).getErrorCode())
                     .isEqualTo(CompanyErrorCode.COLLECTION_SOURCE_ERROR);
+        }
+
+        @Test
+        @DisplayName("SNAPSHOT 모드 Port는 baseDate 조회 없이 fetchSnapshot으로 한 번에 수집한다")
+        void collect_snapshotModePort_fetchesViaSnapshotWithoutDateLookup() {
+            ListedCompanyCollectionPort nasdaqPort = mock(ListedCompanyCollectionPort.class);
+            given(nasdaqPort.market()).willReturn(Market.NASDAQ);
+            given(nasdaqPort.mode()).willReturn(CollectionMode.SNAPSHOT);
+            ListedCompanyItem item = new ListedCompanyItem(Market.NASDAQ, "AAPL", "Apple");
+            given(nasdaqPort.fetchSnapshot()).willReturn(List.of(item));
+            given(companyRepository.findByMarketAndStockCode(Market.NASDAQ, "AAPL"))
+                    .willReturn(Optional.empty());
+            CompanyCollectionService snapshotService =
+                    new CompanyCollectionService(List.of(nasdaqPort), companyRepository);
+
+            snapshotService.collect(Market.NASDAQ);
+
+            verify(companyRepository).save(any(Company.class));
+            verify(nasdaqPort, never()).fetchPage(any(), anyInt(), anyInt());
         }
     }
 }
