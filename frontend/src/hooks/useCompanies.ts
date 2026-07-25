@@ -1,12 +1,13 @@
 import { keepPreviousData, useQuery } from '@tanstack/react-query';
 import { fetchCompanies, fetchCompanyDetail } from '../api/companies';
+import type { Market } from '../types/company';
 
-export const useCompaniesQuery = (currentPage: number, keyword: string) => {
+export const useCompaniesQuery = (market: Market, currentPage: number, keyword: string) => {
   const trimmed = keyword.trim();
 
   return useQuery({
-    queryKey: ['companies', 'list', { page: currentPage, keyword: trimmed }],
-    queryFn: () => fetchCompanies(currentPage - 1, trimmed || undefined), // 1-based → 0-based 변환 지점
+    queryKey: ['companies', 'list', { market, page: currentPage, keyword: trimmed }],
+    queryFn: () => fetchCompanies(market, currentPage - 1, trimmed || undefined), // 1-based → 0-based 변환 지점
     placeholderData: keepPreviousData,
   });
 };

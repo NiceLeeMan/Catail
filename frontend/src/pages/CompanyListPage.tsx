@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { TrendingUp } from 'lucide-react';
 import { CompanyPageHeader } from '../components/company/CompanyPageHeader';
 import { HeroBanner } from '../components/company/HeroBanner';
+import { CompanyMarketTabs } from '../components/company/CompanyMarketTabs';
 import { CompanySearchBar } from '../components/company/CompanySearchBar';
 import { CompanyTable } from '../components/company/CompanyTable';
 import { Pagination } from '../components/company/Pagination';
@@ -12,17 +12,27 @@ import { CompanyEmptyState } from '../components/company/CompanyEmptyState';
 import { useCompaniesQuery } from '../hooks/useCompanies';
 import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useCountUp } from '../hooks/useCountUp';
-import type { CompanyListItemResponse } from '../types/company';
+import type { CompanyListItemResponse, Market } from '../types/company';
 
 export function CompanyListPage() {
   const navigate = useNavigate();
+  const [market, setMarket] = useState<Market>('KOSPI');
   const [keyword, setKeyword] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const debouncedKeyword = useDebouncedValue(keyword, 300);
   const isSearching = debouncedKeyword.trim().length > 0;
 
-  const { data, isLoading, isFetching, isError } = useCompaniesQuery(currentPage, debouncedKeyword);
+  const { data, isLoading, isFetching, isError } = useCompaniesQuery(
+    market,
+    currentPage,
+    debouncedKeyword
+  );
   const displayedCount = useCountUp(data?.totalElements ?? 0);
+
+  const handleMarketChange = (nextMarket: Market) => {
+    setMarket(nextMarket);
+    setCurrentPage(1);
+  };
 
   const handleKeywordChange = (value: string) => {
     setKeyword(value);
@@ -40,14 +50,7 @@ export function CompanyListPage() {
 
       <main className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-6 px-8 py-9">
         <div className="box-border flex w-full items-center justify-between">
-          <div className="box-border flex w-fit shrink-0 items-center gap-2.5">
-            <div className="box-border flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-dark-bg-badge">
-              <TrendingUp className="h-4 w-4 text-dark-accent" />
-            </div>
-            <span className="text-[17px] font-semibold leading-normal text-dark-text-primary">
-              KOSPI
-            </span>
-          </div>
+          <CompanyMarketTabs activeMarket={market} onChange={handleMarketChange} />
           <span className="text-[14px] font-normal leading-normal text-dark-text-secondary">
             총 {displayedCount}건
           </span>

@@ -1,13 +1,13 @@
 import axiosInstance from './axiosInstance'
 import type { ApiResponse, PageResponse } from './types'
-import type { CompanyDetailResponse, CompanyListItemResponse } from '../types/company'
+import type { CompanyDetailResponse, CompanyListItemResponse, Market } from '../types/company'
 
-export const fetchCompanies = async (page: number, keyword?: string) => {
+export const fetchCompanies = async (market: Market, page: number, keyword?: string) => {
   const res = await axiosInstance.get<
     ApiResponse<PageResponse<CompanyListItemResponse>>
   >(
     '/companies',
-    { params: { market: 'KOSPI', page, ...(keyword ? { keyword } : {}) } } // page는 반드시 0-based로 전달
+    { params: { market, page, ...(keyword ? { keyword } : {}) } } // page는 반드시 0-based로 전달
   )
   return res.data.data!
 }
