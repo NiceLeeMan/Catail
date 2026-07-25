@@ -8,6 +8,7 @@ interface CompanyDetailHeaderProps {
 const MARKET_LABELS: Record<string, string> = {
   KOSPI: '코스피',
   KOSDAQ: '코스닥',
+  NASDAQ: '나스닥',
 };
 
 export function CompanyDetailHeader({ company }: CompanyDetailHeaderProps) {
