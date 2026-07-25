@@ -22,7 +22,7 @@ import java.util.Set;
 public class CompanyListService {
 
     private static final int PAGE_SIZE = 50;
-    private static final Set<Market> SUPPORTED_MARKETS = Set.of(Market.KOSPI);
+    private static final Set<Market> SUPPORTED_MARKETS = Set.of(Market.KOSPI, Market.NASDAQ);
 
     private final CompanyRepository companyRepository;
 

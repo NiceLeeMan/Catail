@@ -23,6 +23,7 @@ public class CompanyCollectionScheduler implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         collectKospi();
+        collectNasdaq();
     }
 
     @Scheduled(cron = "0 0 15 * * *")
@@ -32,6 +33,15 @@ public class CompanyCollectionScheduler implements ApplicationRunner {
             companyOpenDartMappingService.mapKospiCorpCodes();
         } catch (Exception e) {
             log.error("코스피 상장기업 수집 실패", e);
+        }
+    }
+
+    @Scheduled(cron = "0 30 15 * * *")
+    public void collectNasdaq() {
+        try {
+            companyCollectionService.collect(Market.NASDAQ);
+        } catch (Exception e) {
+            log.error("나스닥 상장기업 수집 실패", e);
         }
     }
 }

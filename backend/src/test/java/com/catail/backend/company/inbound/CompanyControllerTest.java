@@ -127,12 +127,47 @@ class CompanyControllerTest {
         @Test
         @DisplayName("지원하지 않는 market이면 400을 반환한다")
         void getList_unsupportedMarket_returns400() throws Exception {
-            given(companyListService.getList("NASDAQ", null, 0))
+            given(companyListService.getList("NYSE", null, 0))
                     .willThrow(new BusinessException(CompanyErrorCode.UNSUPPORTED_MARKET));
 
-            mockMvc.perform(get("/api/companies").param("market", "NASDAQ"))
+            mockMvc.perform(get("/api/companies").param("market", "NYSE"))
                     .andExpect(status().isBadRequest())
                     .andExpect(jsonPath("$.error.code").value("COMPANY_001"));
+        }
+
+        @Test
+        @DisplayName("market=NASDAQ으로 조회하면 200과 기업 목록을 반환한다")
+        void getList_nasdaq_returns200() throws Exception {
+            CompanyListItem item = new CompanyListItem(2L, "Apple", "AAPL", "NASDAQ", null, null);
+            CompanyListResponse response = new CompanyListResponse(List.of(item), 0, 50, 1, 1, false);
+            given(companyListService.getList("NASDAQ", null, 0)).willReturn(response);
+
+            mockMvc.perform(get("/api/companies").param("market", "NASDAQ"))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.items[0].stockCode").value("AAPL"))
+                    .andExpect(jsonPath("$.data.items[0].market").value("NASDAQ"))
+                    .andDo(document("company/list-nasdaq",
+                            responseFields(
+                                    fieldWithPath("success").description("성공 여부"),
+                                    fieldWithPath("data.items").description("기업 목록"),
+                                    fieldWithPath("data.items[].id").description("기업 ID"),
+                                    fieldWithPath("data.items[].companyName").description("기업명"),
+                                    fieldWithPath("data.items[].stockCode").description("티커"),
+                                    fieldWithPath("data.items[].market").description("상장시장"),
+                                    fieldWithPath("data.items[].industryName").description("업종명")
+                                            .optional().type(JsonFieldType.NULL),
+                                    fieldWithPath("data.items[].logoUrl").description("로고 URL")
+                                            .optional().type(JsonFieldType.NULL),
+                                    fieldWithPath("data.page").description("현재 페이지"),
+                                    fieldWithPath("data.size").description("페이지 크기"),
+                                    fieldWithPath("data.totalElements").description("전체 개수"),
+                                    fieldWithPath("data.totalPages").description("전체 페이지 수"),
+                                    fieldWithPath("data.hasNext").description("다음 페이지 존재 여부"),
+                                    fieldWithPath("error").description("에러 정보 (성공 시 null)")
+                                            .optional().type(JsonFieldType.NULL)
+                            )
+                    ));
         }
 
         @Test
