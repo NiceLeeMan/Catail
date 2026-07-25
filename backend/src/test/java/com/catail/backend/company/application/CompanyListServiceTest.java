@@ -58,14 +58,17 @@ class CompanyListServiceTest {
         }
 
         @Test
-        @DisplayName("지원하지 않는 시장(NASDAQ)이면 UNSUPPORTED_MARKET 예외가 발생한다")
-        void getList_nasdaq_throwsUnsupportedMarket() {
-            assertThatThrownBy(() -> companyListService.getList("NASDAQ", null, 0))
-                    .isInstanceOf(BusinessException.class)
-                    .extracting(e -> ((BusinessException) e).getErrorCode())
-                    .isEqualTo(CompanyErrorCode.UNSUPPORTED_MARKET);
+        @DisplayName("market=NASDAQ이면 정상적으로 페이지를 조회한다")
+        void getList_nasdaq_returnsPage() {
+            Company company = Company.create(Market.NASDAQ, "AAPL", "Apple");
+            Page<Company> page = new PageImpl<>(List.of(company), PageRequest.of(0, 50), 1);
+            given(companyRepository.findByMarket(eq(Market.NASDAQ), any(Pageable.class))).willReturn(page);
 
-            verifyNoInteractions(companyRepository);
+            CompanyListResponse response = companyListService.getList("NASDAQ", null, 0);
+
+            assertThat(response.items()).hasSize(1);
+            assertThat(response.items().get(0).stockCode()).isEqualTo("AAPL");
+            assertThat(response.totalElements()).isEqualTo(1);
         }
 
         @Test
