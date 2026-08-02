@@ -10,12 +10,14 @@ servers:
 tags:
   - name: 인증
     description: JWT 토큰 발급 / 갱신 / 로그아웃
-  - name: 카탈리스트
-<<<<<<< HEAD
-    description: 카탈리스트 생성 / 목록조회 / 상세조회 / 수정 / 삭제
-=======
-    description: 카탈리스트 생성 / 목록조회 / 상세조회 / 수정 / 상태변경 / 삭제
->>>>>>> 4eaa3ed (docs: 카탈리스트 수정/상태변경/삭제 API를 Swagger 스펙에 반영)
+  - name: 기업
+    description: 기업 목록 / 상세 조회
+  - name: 공시
+    description: 기업별 공시 목록 조회
+  - name: 탐색 계획 (내부)
+    description: |
+      관련 참여주체 탐색 계획 포맷을 실제 LLM 호출로 생성해 눈으로 확인하기 위한 내부 전용 API.
+      FE에 노출되는 정식 API가 아니며, 개발 중 OpenAI 연동 결과를 확인하는 용도로만 사용합니다.
 
 paths:
   /oauth2/authorization/google:
@@ -111,46 +113,30 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthenticated'
 
-  /api/catalysts:
-    post:
-      tags:
-        - 카탈리스트
-      summary: 카탈리스트 생성
-      description: |
-        카탈리스트를 생성합니다. `status`가 `ACTIVE`이면 생성 직후 시그널 후보 수집이 내부적으로 트리거됩니다.
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/CreateCatalystRequest'
-            example:
-              title: 반도체 업황 개선
-              content: 메모리 반도체 가격 상승 전환에 따른 관련주 수혜 기대
-              industryIds: [1]
-              status: ACTIVE
-      responses:
-        '201':
-          description: 생성 성공
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CatalystCreateResponse'
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/Unauthenticated'
-
+  /api/companies:
     get:
       tags:
-        - 카탈리스트
-      summary: 카탈리스트 목록 조회
-      description: 로그인한 사용자가 소유한 카탈리스트를 페이지 단위(size=20 고정)로 조회합니다.
+        - 기업
+      summary: 기업 목록 조회
+      description: |
+        market(`KOSPI`/`NASDAQ`) 기준으로 기업 목록을 페이지 단위(size=50 고정)로 조회합니다.
+        keyword를 전달하면 기업명으로 검색합니다. market이 없거나 지원하지 않는 값이면 400을 반환합니다.
       security:
         - bearerAuth: []
       parameters:
+        - in: query
+          name: market
+          required: true
+          schema:
+            type: string
+            enum: [KOSPI, NASDAQ]
+          description: 상장 시장
+        - in: query
+          name: keyword
+          required: false
+          schema:
+            type: string
+          description: 기업명 검색 키워드
         - in: query
           name: page
           required: false
@@ -165,163 +151,137 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CatalystPageResponse'
+                $ref: '#/components/schemas/CompanyListResponse'
         '400':
-          $ref: '#/components/responses/ValidationError'
+          $ref: '#/components/responses/UnsupportedMarket'
         '401':
           $ref: '#/components/responses/Unauthenticated'
 
-  /api/catalysts/{id}:
+  /api/companies/{companyId}:
     get:
       tags:
-        - 카탈리스트
-      summary: 카탈리스트 상세 조회 (카탈리스트 정보 탭)
-      description: |
-        카탈리스트 상세 화면의 "카탈리스트 정보" 탭에 필요한 데이터를 basicInfo / monitoringOperation 두 덩어리로 반환합니다.
-
-        `monitoringOperation.lastSearchedAt`과 `activatedAt`은 시그널 수집 파이프라인이 아직 구현되지 않아 현재는 항상 `null`입니다
-        (모니터링 상태변경 API의 `INACTIVE`→`ACTIVE` 전이 지점에 트리거 연동 자리는 마련되어 있으나 실제 수집 로직은 미구현).
+        - 기업
+      summary: 기업 상세 조회
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: id
+          name: companyId
           required: true
           schema:
             type: integer
             format: int64
-          description: 카탈리스트 ID
+          description: 기업 ID
       responses:
         '200':
           description: 조회 성공
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CatalystInfoResponse'
+                $ref: '#/components/schemas/CompanyDetailResponse'
         '401':
           $ref: '#/components/responses/Unauthenticated'
         '404':
-          $ref: '#/components/responses/CatalystNotFound'
+          $ref: '#/components/responses/CompanyNotFound'
 
-    put:
+  /api/companies/{companyId}/disclosures:
+    get:
       tags:
-        - 카탈리스트
-      summary: 카탈리스트 기본정보 수정
+        - 공시
+      summary: 기업 공시 목록 조회
       description: |
-        title / content / industryIds 3개 필드를 전체 교체합니다.
-        status와 검색조건은 이 API의 수정 대상이 아닙니다.
+        기업의 공시 목록을 커서 기반으로 조회합니다 (현재는 OpenDART 제공 공시만 대상).
+        cursor를 생략하면 최신순 첫 페이지를 반환하며, hasNext가 true이면 nextCursor로 다음 페이지를 조회할 수 있습니다.
       security:
         - bearerAuth: []
       parameters:
         - in: path
-          name: id
+          name: companyId
           required: true
           schema:
             type: integer
             format: int64
-          description: 카탈리스트 ID
+          description: 기업 ID
+        - in: query
+          name: cursor
+          required: false
+          schema:
+            type: string
+          description: 다음 페이지 조회를 위한 커서 (이전 응답의 nextCursor)
+        - in: query
+          name: size
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+          description: 페이지 크기
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisclosureListResponse'
+        '400':
+          $ref: '#/components/responses/InvalidCursor'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/DisclosureCompanyNotFound'
+
+  /api/internal/search-plans:
+    post:
+      tags:
+        - 탐색 계획 (내부)
+      summary: 관련 참여주체 탐색 계획 생성
+      description: |
+        companyId와 analysisScope(분석범위)를 입력받아 LLM을 호출하고,
+        SUPPLIER/CUSTOMER/COMPETITION/PARTNER/GATE_KEEPER/PUBLIC_AUTHORITY/CRITICAL_RESOURCE_HOLDER
+        7개 기준(criterion)별 탐색 계획(scopeRelevance, queries)을 생성해 반환합니다.
+        인증이 필요 없는 내부 전용 엔드포인트입니다.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateCatalystBasicInfoRequest'
+              $ref: '#/components/schemas/SearchPlanRequest'
             example:
-              title: 반도체 업황 개선 (수정)
-              content: 메모리 반도체 가격 상승 전환에 따른 관련주 수혜 기대, 파운드리 업황도 개선세로 전환
-              industryIds: [1, 2]
+              companyId: 1
+              analysisScope: 메모리 반도체 가격 상승이 실적에 미치는 영향
       responses:
         '200':
-          description: 수정 성공
+          description: 생성 성공
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CatalystUpdateResponse'
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/Unauthenticated'
+                $ref: '#/components/schemas/SearchPlanFormatResponse'
         '404':
-          $ref: '#/components/responses/CatalystNotFound'
-
-    delete:
-      tags:
-        - 카탈리스트
-      summary: 카탈리스트 삭제
-<<<<<<< HEAD
-=======
-      description: |
-        본인 소유의 카탈리스트를 소프트 삭제합니다. status를 `ENDED`로 전환하고 `deletedAt`을 기록합니다.
-        (참고: status가 `ENDED`이면서 `deletedAt`이 `null`이면 모니터링 상태변경 API로 "종료"된 것이고,
-        `deletedAt`이 있으면 이 API로 "삭제"된 것입니다.)
->>>>>>> 4eaa3ed (docs: 카탈리스트 수정/상태변경/삭제 API를 Swagger 스펙에 반영)
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-            format: int64
-          description: 카탈리스트 ID
-      responses:
-        '200':
-          description: 삭제 성공
+          $ref: '#/components/responses/CompanyNotFound'
+        '502':
+          description: LLM 호출 실패 또는 응답이 탐색 계획 포맷과 불일치
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CatalystDeleteResponse'
-        '401':
-          $ref: '#/components/responses/Unauthenticated'
-        '404':
-          $ref: '#/components/responses/CatalystNotFound'
-
-  /api/catalysts/{id}/status:
-    patch:
-      tags:
-        - 카탈리스트
-      summary: 카탈리스트 모니터링 상태변경
-      description: |
-        targetStatus(`ACTIVE`/`PAUSED`/`ENDED`)를 받아 모니터링 상태를 변경하는 단일 API입니다.
-        일시중지 / 재개 / 종료를 별도 API로 두지 않고 이 API 하나로 처리하며, 허용되는 전이는 도메인 레이어에 캡슐화되어 있습니다.
-
-        **허용 전이**: `INACTIVE`→{`ACTIVE`, `ENDED`}, `ACTIVE`→{`PAUSED`, `ENDED`}, `PAUSED`→{`ACTIVE`, `ENDED`}.
-        그 외(`ENDED`에서의 모든 전이, 동일 상태로의 전이 등)는 400으로 거부됩니다. `INACTIVE`로의 전이는 허용되지 않습니다.
-
-        `INACTIVE`→`ACTIVE` 전이 시 시그널 수집을 트리거하는 연동 지점은 마련되어 있으나,
-        시그널 수집 파이프라인 자체가 아직 미구현이라 실제 수집은 일어나지 않습니다.
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: id
-          required: true
-          schema:
-            type: integer
-            format: int64
-          description: 카탈리스트 ID
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ChangeCatalystStatusRequest'
-            example:
-              targetStatus: PAUSED
-      responses:
-        '200':
-          description: 상태변경 성공
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CatalystStatusResponse'
-        '400':
-          $ref: '#/components/responses/ValidationError'
-        '401':
-          $ref: '#/components/responses/Unauthenticated'
-        '404':
-          $ref: '#/components/responses/CatalystNotFound'
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                llmCallFailed:
+                  summary: LLM 호출 실패
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      code: SEARCH_PLAN_001
+                      message: 탐색 계획 생성을 위한 LLM 호출에 실패했습니다.
+                llmInvalidResponse:
+                  summary: LLM 응답 포맷 불일치
+                  value:
+                    success: false
+                    data: null
+                    error:
+                      code: SEARCH_PLAN_002
+                      message: LLM 응답이 탐색 계획 포맷과 일치하지 않습니다.
 
 components:
   schemas:
@@ -373,162 +333,39 @@ components:
               type: string
               example: 인증이 필요합니다
 
-    CreateCatalystRequest:
-      type: object
-      required:
-        - title
-        - content
-        - industryIds
-        - status
-      properties:
-        title:
-          type: string
-          description: 제목 (필수)
-        content:
-          type: string
-          description: 본문 (필수)
-        industryIds:
-          type: array
-          description: 업종 ID 목록 (1개 이상 10개 이하)
-          minItems: 1
-          maxItems: 10
-          items:
-            type: integer
-            format: int64
-        status:
-          type: string
-          description: 상태 (필수)
-          enum: [ACTIVE, INACTIVE, PAUSED, ENDED]
-
-    CatalystCreate:
+    CompanyListItem:
       type: object
       properties:
         id:
           type: integer
           format: int64
-        title:
+          description: 기업 ID
+        companyName:
           type: string
-        content:
+          description: 기업명
+        stockCode:
           type: string
-        status:
+          description: 종목코드 / 티커
+        market:
           type: string
-          enum: [ACTIVE, INACTIVE, PAUSED, ENDED]
-        industries:
-          type: array
-          items:
-            type: string
-          description: 업종 목록
-        createdAt:
+          enum: [KOSPI, NASDAQ]
+          description: 상장시장
+        industryName:
           type: string
-          format: date-time
-
-    CatalystCreateResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        data:
-          $ref: '#/components/schemas/CatalystCreate'
-        error:
-          type: object
           nullable: true
-
-    CatalystBasicInfo:
-      type: object
-      description: 기본 정보 카드
-      properties:
-        title:
+          description: 업종명
+        logoUrl:
           type: string
-        content:
-          type: string
-        industries:
-          type: array
-          items:
-            type: string
-          description: 업종 목록
-        createdAt:
-          type: string
-          format: date-time
-        updatedAt:
-          type: string
-          format: date-time
-
-    CatalystMonitoringOperation:
-      type: object
-      description: 모니터링 운영정보
-      properties:
-        status:
-          type: string
-          enum: [ACTIVE, INACTIVE, PAUSED, ENDED]
-        searchConditions:
-          type: array
-          items:
-            type: string
-          description: 모니터링 검색 조건 목록
-        searchIntervalHours:
-          type: integer
-          description: 탐색 주기(시간 단위), 기본값 4
-        lastSearchedAt:
-          type: string
-          format: date-time
           nullable: true
-          description: 마지막 탐색 시각 (시그널 수집 파이프라인 구현 전까지 항상 null)
-        activatedAt:
-          type: string
-          format: date-time
-          nullable: true
-          description: 모니터링 시작 시각 (모니터링 상태변경 API 구현 전까지 항상 null)
+          description: 로고 URL
 
-    CatalystInfo:
-      type: object
-      properties:
-        basicInfo:
-          $ref: '#/components/schemas/CatalystBasicInfo'
-        monitoringOperation:
-          $ref: '#/components/schemas/CatalystMonitoringOperation'
-
-    CatalystInfoResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        data:
-          $ref: '#/components/schemas/CatalystInfo'
-        error:
-          type: object
-          nullable: true
-
-    CatalystListItem:
-      type: object
-      properties:
-        id:
-          type: integer
-          format: int64
-        title:
-          type: string
-        status:
-          type: string
-          enum: [ACTIVE, INACTIVE, PAUSED, ENDED]
-        industryTags:
-          type: array
-          items:
-            type: string
-        pendingSignalCount:
-          type: integer
-          description: 대기중인 시그널 수
-        createdAt:
-          type: string
-          format: date-time
-
-    CatalystPage:
+    CompanyPage:
       type: object
       properties:
         items:
           type: array
           items:
-            $ref: '#/components/schemas/CatalystListItem'
+            $ref: '#/components/schemas/CompanyListItem'
         page:
           type: integer
           description: 현재 페이지 (0부터 시작)
@@ -546,127 +383,188 @@ components:
           type: boolean
           description: 다음 페이지 존재 여부
 
-    CatalystPageResponse:
+    CompanyListResponse:
       type: object
       properties:
         success:
           type: boolean
           example: true
         data:
-          $ref: '#/components/schemas/CatalystPage'
+          $ref: '#/components/schemas/CompanyPage'
         error:
           type: object
           nullable: true
 
-    UpdateCatalystBasicInfoRequest:
+    CompanyDetail:
       type: object
-      required:
-        - title
-        - content
-        - industryIds
       properties:
-        title:
+        id:
+          type: integer
+          format: int64
+        market:
           type: string
-          description: 제목 (필수)
-        content:
+          enum: [KOSPI, NASDAQ]
+        stockCode:
           type: string
-          description: 본문 (필수)
-        industryIds:
-          type: array
-          description: 업종 ID 목록 (1개 이상 10개 이하)
-          minItems: 1
-          maxItems: 10
-          items:
-            type: integer
-            format: int64
+        companyName:
+          type: string
+        industryName:
+          type: string
+          nullable: true
+        logoUrl:
+          type: string
+          nullable: true
 
-    CatalystUpdate:
+    CompanyDetailResponse:
       type: object
       properties:
-        title:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CompanyDetail'
+        error:
+          type: object
+          nullable: true
+
+    DisclosureItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        provider:
           type: string
-        content:
+          enum: [OPEN_DART, SEC_EDGAR]
+          description: 공시 출처
+        reportName:
           type: string
-        industries:
+          description: 보고서명
+        submitterName:
+          type: string
+          description: 제출인
+        receivedDate:
+          type: string
+          format: date
+          description: 접수일
+        remarkCodes:
           type: array
           items:
             type: string
-          description: 업종 목록
-        updatedAt:
+          description: 비고 코드 목록
+        sourceUrl:
+          type: string
+          description: 원문 링크
+
+    DisclosurePage:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DisclosureItem'
+        nextCursor:
+          type: string
+          nullable: true
+          description: 다음 페이지 커서 (hasNext=false면 null)
+        hasNext:
+          type: boolean
+        lastSyncedAt:
           type: string
           format: date-time
+          nullable: true
+          description: 마지막 동기화 시각 (동기화 이력이 없으면 null)
+        initialSyncCompleted:
+          type: boolean
+          description: 최초 전체 동기화 완료 여부
 
-    CatalystUpdateResponse:
+    DisclosureListResponse:
       type: object
       properties:
         success:
           type: boolean
           example: true
         data:
-          $ref: '#/components/schemas/CatalystUpdate'
+          $ref: '#/components/schemas/DisclosurePage'
         error:
           type: object
           nullable: true
 
-<<<<<<< HEAD
-=======
-    ChangeCatalystStatusRequest:
+    SearchPlanRequest:
       type: object
       required:
-        - targetStatus
+        - companyId
+        - analysisScope
       properties:
-        targetStatus:
+        companyId:
+          type: integer
+          format: int64
+          description: 탐색 대상 기업 ID
+        analysisScope:
           type: string
-          description: 변경하려는 목표 상태. `INACTIVE`로의 전이는 허용되지 않음
-          enum: [ACTIVE, PAUSED, ENDED]
+          description: 분석범위 — 어떤 관점/이슈로 관련 참여주체를 탐색할지에 대한 자연어 설명
 
-    CatalystStatusChange:
+    TargetCompanyInfo:
       type: object
       properties:
-        status:
+        companyId:
+          type: integer
+          format: int64
+        companyName:
           type: string
-          enum: [ACTIVE, INACTIVE, PAUSED, ENDED]
-        updatedAt:
+        englishName:
           type: string
-          format: date-time
+          description: 영문명 (현재는 항상 빈 문자열)
+        stockCode:
+          type: string
+        market:
+          type: string
+          enum: [KOSPI, NASDAQ]
+        countryCode:
+          type: string
+          description: market으로부터 결정되는 국가 코드
 
-    CatalystStatusResponse:
+    CriterionPlan:
+      type: object
+      properties:
+        criterion:
+          type: string
+          enum: [SUPPLIER, CUSTOMER, COMPETITION, PARTNER, GATE_KEEPER, PUBLIC_AUTHORITY, CRITICAL_RESOURCE_HOLDER]
+          description: 관련 참여주체 기준
+        scopeRelevance:
+          type: string
+          description: 해당 기준이 분석범위와 어떻게 관련되는지에 대한 LLM 설명
+        queries:
+          type: array
+          items:
+            type: string
+          description: 해당 기준으로 탐색할 검색 쿼리 목록
+
+    SearchPlanFormat:
+      type: object
+      properties:
+        targetCompany:
+          $ref: '#/components/schemas/TargetCompanyInfo'
+        analysisScope:
+          type: string
+        criteria:
+          type: array
+          items:
+            $ref: '#/components/schemas/CriterionPlan'
+          description: 7개 기준(criterion) 전체에 대한 탐색 계획
+
+    SearchPlanFormatResponse:
       type: object
       properties:
         success:
           type: boolean
           example: true
         data:
-          $ref: '#/components/schemas/CatalystStatusChange'
+          $ref: '#/components/schemas/SearchPlanFormat'
         error:
           type: object
           nullable: true
 
-    CatalystDelete:
-      type: object
-      properties:
-        status:
-          type: string
-          enum: [ENDED]
-          description: 삭제 후 상태 (항상 ENDED)
-        deletedAt:
-          type: string
-          format: date-time
-          description: 삭제 시각
-
-    CatalystDeleteResponse:
-      type: object
-      properties:
-        success:
-          type: boolean
-          example: true
-        data:
-          $ref: '#/components/schemas/CatalystDelete'
-        error:
-          type: object
-          nullable: true
-
->>>>>>> 4eaa3ed (docs: 카탈리스트 수정/상태변경/삭제 API를 Swagger 스펙에 반영)
   securitySchemes:
     bearerAuth:
       type: http
@@ -687,8 +585,8 @@ components:
               code: GLOBAL_001
               message: 인증이 필요합니다
 
-    ValidationError:
-      description: 요청 값 검증 실패
+    UnsupportedMarket:
+      description: market이 없거나 지원하지 않는 값
       content:
         application/json:
           schema:
@@ -697,11 +595,11 @@ components:
             success: false
             data: null
             error:
-              code: GLOBAL_003
-              message: 유효하지 않은 입력값입니다
+              code: COMPANY_001
+              message: 지원하지 않는 시장입니다.
 
-    CatalystNotFound:
-      description: 존재하지 않는 카탈리스트
+    CompanyNotFound:
+      description: 존재하지 않는 기업
       content:
         application/json:
           schema:
@@ -710,5 +608,31 @@ components:
             success: false
             data: null
             error:
-              code: CATALYST_001
-              message: 존재하지 않는 카탈리스트입니다.
+              code: COMPANY_004
+              message: 기업을 찾을 수 없습니다.
+
+    DisclosureCompanyNotFound:
+      description: 존재하지 않는 기업
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            data: null
+            error:
+              code: DISCLOSURE_001
+              message: 기업을 찾을 수 없습니다.
+
+    InvalidCursor:
+      description: 유효하지 않은 커서
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            success: false
+            data: null
+            error:
+              code: DISCLOSURE_002
+              message: 유효하지 않은 커서입니다.
