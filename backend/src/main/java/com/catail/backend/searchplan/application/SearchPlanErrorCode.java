@@ -1,0 +1,25 @@
+package com.catail.backend.searchplan.application;
+
+import com.catail.backend.global.ErrorCode;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+
+@RequiredArgsConstructor
+public enum SearchPlanErrorCode implements ErrorCode {
+
+    LLM_CALL_FAILED(HttpStatus.BAD_GATEWAY, "SEARCH_PLAN_001", "탐색 계획 생성을 위한 LLM 호출에 실패했습니다."),
+    LLM_INVALID_RESPONSE(HttpStatus.BAD_GATEWAY, "SEARCH_PLAN_002", "LLM 응답이 탐색 계획 포맷과 일치하지 않습니다.");
+
+    private final HttpStatus status;
+    private final String code;
+    private final String message;
+
+    @Override
+    public HttpStatus getStatus() { return status; }
+
+    @Override
+    public String getCode() { return code; }
+
+    @Override
+    public String getMessage() { return message; }
+}
