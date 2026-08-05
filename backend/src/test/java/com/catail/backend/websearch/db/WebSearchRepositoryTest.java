@@ -1,6 +1,8 @@
 package com.catail.backend.websearch.db;
 
 import com.catail.backend.searchplan.domain.Criterion;
+import com.catail.backend.websearch.domain.CrawlStatus;
+import com.catail.backend.websearch.domain.SearchExecutionStatus;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,9 +10,12 @@ import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.data.domain.PageRequest;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -120,5 +125,42 @@ class WebSearchRepositoryTest {
         searchResultQueryRepository.saveAndFlush(SearchResultQuery.create(result.getId(), query.getId()));
 
         assertThat(searchResultQueryRepository.count()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("SearchResult를 저장하면 crawl_status는 PENDING, retry_count는 0으로 기본 적용된다")
+    void searchResult_savedWithDefaultCrawlStatusAndRetryCount() {
+        Long executionId = createExecution();
+
+        SearchResult saved = searchResultRepository.saveAndFlush(
+                SearchResult.create(executionId, "제목", "https://example.com/a"));
+
+        assertThat(saved.getCrawlStatus()).isEqualTo(CrawlStatus.PENDING);
+        assertThat(saved.getRetryCount()).isZero();
+    }
+
+    @Test
+    @DisplayName("findCrawlCandidates는 연관관계 없이 searchExecutionId로 SUCCESS/PARTIAL_FAILURE 실행의 PENDING 결과만 조회한다")
+    void findCrawlCandidates_filtersByCrawlStatusAndExecutionStatusWithoutAssociation() {
+        SearchExecution successExecution = searchExecutionRepository.save(SearchExecution.create(1L, 1L, "성공 실행"));
+        successExecution.markSuccess();
+        searchExecutionRepository.saveAndFlush(successExecution);
+        Long pendingExecutionId = searchExecutionRepository.save(SearchExecution.create(1L, 1L, "대기 실행")).getId();
+
+        SearchResult eligible = searchResultRepository.saveAndFlush(
+                SearchResult.create(successExecution.getId(), "제목1", "https://example.com/eligible"));
+        searchResultRepository.saveAndFlush(
+                SearchResult.create(pendingExecutionId, "제목2", "https://example.com/not-eligible-execution"));
+        SearchResult alreadyProcessing = searchResultRepository.saveAndFlush(
+                SearchResult.create(successExecution.getId(), "제목3", "https://example.com/already-processing"));
+        alreadyProcessing.markCrawlProcessing();
+        searchResultRepository.saveAndFlush(alreadyProcessing);
+
+        List<SearchResult> candidates = searchResultRepository.findCrawlCandidates(
+                CrawlStatus.PENDING,
+                List.of(SearchExecutionStatus.SUCCESS, SearchExecutionStatus.PARTIAL_FAILURE),
+                PageRequest.of(0, 10));
+
+        assertThat(candidates).extracting(SearchResult::getId).containsExactly(eligible.getId());
     }
 }
