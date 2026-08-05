@@ -76,11 +76,11 @@ class SearchExecutionServiceTest {
     }
 
     @Test
-    @DisplayName("criterion당 검색어가 15개를 초과하면 TOO_MANY_QUERIES_PER_CRITERION 예외가 발생한다")
+    @DisplayName("criterion당 검색어가 5개를 초과하면 TOO_MANY_QUERIES_PER_CRITERION 예외가 발생한다")
     void create_tooManyQueriesPerCriterion_throwsException() {
         createService();
         SearchPlanFormat format = new SearchPlanFormat(TARGET_COMPANY, "HBM 사업", List.of(
-                new CriterionPlan(Criterion.SUPPLIER, "관련", queries("q", 16))
+                new CriterionPlan(Criterion.SUPPLIER, "관련", queries("q", 6))
         ));
         given(searchPlanService.generate(any())).willReturn(format);
 

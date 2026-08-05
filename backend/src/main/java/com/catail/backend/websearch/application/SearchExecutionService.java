@@ -23,7 +23,7 @@ import java.util.Set;
 @RequiredArgsConstructor
 public class SearchExecutionService {
 
-    private static final int MAX_QUERIES_PER_CRITERION = 15;
+    private static final int MAX_QUERIES_PER_CRITERION = 5;
     private static final String QUERY_LANGUAGE = "ko";
     private static final String QUERY_REGION = "KR";
 
