@@ -35,4 +35,23 @@ class UrlNormalizerTest {
         assertThat(UrlNormalizer.normalize("https://example.com/a?keep=1"))
                 .isEqualTo("https://example.com/a?keep=1");
     }
+
+    @Test
+    @DisplayName("Google 클릭 추적용 상대경로(/goto?url=...)는 null을 반환한다")
+    void normalize_googleGotoRelativePath_returnsNull() {
+        assertThat(UrlNormalizer.normalize("/goto?url=CAESdgHuR6pNcS5SZJg7HAOyD0OR")).isNull();
+    }
+
+    @Test
+    @DisplayName("Google 관련 검색 상대경로(/search?...)는 null을 반환한다")
+    void normalize_googleSearchRelativePath_returnsNull() {
+        assertThat(UrlNormalizer.normalize("/search?q=SK하이닉스+HBM")).isNull();
+    }
+
+    @Test
+    @DisplayName("null 또는 빈 문자열은 null을 반환한다")
+    void normalize_nullOrBlank_returnsNull() {
+        assertThat(UrlNormalizer.normalize(null)).isNull();
+        assertThat(UrlNormalizer.normalize("")).isNull();
+    }
 }

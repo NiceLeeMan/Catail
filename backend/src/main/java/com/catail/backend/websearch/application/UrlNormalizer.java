@@ -11,7 +11,12 @@ public final class UrlNormalizer {
 
     public static String normalize(String rawUrl) {
         if (rawUrl == null || rawUrl.isBlank()) {
-            return rawUrl;
+            return null;
+        }
+        // Outscraper의 organic_results에는 실제 기사 URL이 아니라 "관련 검색" 등
+        // Google 내부 상대경로(/goto?url=..., /search?...)가 섞여 오는 경우가 있어 걸러낸다.
+        if (!isAbsoluteHttpUrl(rawUrl)) {
+            return null;
         }
         String withoutFragment = rawUrl.split("#", 2)[0];
 
@@ -32,5 +37,10 @@ public final class UrlNormalizer {
     private static boolean isTrackingParam(String param) {
         String name = param.split("=", 2)[0].toLowerCase(Locale.ROOT);
         return name.startsWith("utm_");
+    }
+
+    private static boolean isAbsoluteHttpUrl(String url) {
+        String lower = url.toLowerCase(Locale.ROOT);
+        return lower.startsWith("http://") || lower.startsWith("https://");
     }
 }
