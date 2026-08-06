@@ -55,11 +55,17 @@ public class SearchResultAssembler {
     }
 
     private void linkResult(Long searchExecutionId, Long searchQueryId, OutscraperOrganicResult organic) {
-        String normalizedUrl = UrlNormalizer.normalize(organic.link());
-        if (normalizedUrl == null || normalizedUrl.isBlank()) {
+        String rawUrl = organic.link();
+        if (rawUrl == null || rawUrl.isBlank()) {
+            return;
+        }
+        if (!UrlValidator.isValid(rawUrl)) {
+            log.warn("유효하지 않은 URL이라 크롤링 대상에서 제외합니다: executionId={}, url={}",
+                    searchExecutionId, rawUrl);
             return;
         }
 
+        String normalizedUrl = UrlNormalizer.normalize(rawUrl);
         SearchResult result = searchResultRepository
                 .findBySearchExecutionIdAndCrawlUrl(searchExecutionId, normalizedUrl)
                 .orElseGet(() -> searchResultRepository.save(
