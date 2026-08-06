@@ -42,6 +42,7 @@ class OutscraperSearchAdapterTest {
             assertThat(uri).contains("pagesPerQuery=1");
             assertThat(uri).contains("language=ko");
             assertThat(uri).contains("region=KR");
+            assertThat(uri).contains("tbs=qdr:y2");
             assertThat(uri).contains("async=true");
         }).andExpect(method(GET)).andRespond(withSuccess("""
                 { "id": "job-123", "status": "Pending", "results_location": "https://api.outscraper.cloud/requests/job-123" }
@@ -49,7 +50,7 @@ class OutscraperSearchAdapterTest {
 
         OutscraperSubmitResult result = adapter.submitBatch(
                 List.of("supplierQuery1", "supplierQuery2"),
-                new OutscraperSearchOptions("ko", "KR", 1));
+                new OutscraperSearchOptions("ko", "KR", 1, "qdr:y2"));
 
         assertThat(result.jobId()).isEqualTo("job-123");
         assertThat(result.resultsLocation()).isEqualTo("https://api.outscraper.cloud/requests/job-123");
@@ -60,7 +61,7 @@ class OutscraperSearchAdapterTest {
     void submitBatch_httpError_throwsSubmitException() {
         mockServer.expect(method(GET)).andRespond(withServerError());
 
-        assertThatThrownBy(() -> adapter.submitBatch(List.of("q"), new OutscraperSearchOptions("ko", "KR", 1)))
+        assertThatThrownBy(() -> adapter.submitBatch(List.of("q"), new OutscraperSearchOptions("ko", "KR", 1, "qdr:y2")))
                 .isInstanceOf(OutscraperSubmitException.class);
     }
 

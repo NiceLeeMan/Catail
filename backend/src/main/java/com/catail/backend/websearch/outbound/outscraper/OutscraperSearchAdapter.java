@@ -41,6 +41,7 @@ public class OutscraperSearchAdapter implements OutscraperSearchPort {
                             .queryParam("pagesPerQuery", options.pagesPerQuery())
                             .queryParam("language", options.language())
                             .queryParam("region", options.region())
+                            .queryParam("tbs", options.tbs())
                             .queryParam("async", true)
                             .build())
                     .retrieve()

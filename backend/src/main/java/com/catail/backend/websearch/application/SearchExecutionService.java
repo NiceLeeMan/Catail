@@ -26,6 +26,7 @@ public class SearchExecutionService {
     private static final int MAX_QUERIES_PER_CRITERION = 5;
     private static final String QUERY_LANGUAGE = "ko";
     private static final String QUERY_REGION = "KR";
+    private static final String QUERY_TBS_PAST_2_YEARS = "qdr:y2";
 
     private final SearchPlanService searchPlanService;
     private final SearchExecutionPersistenceService persistenceService;
@@ -73,7 +74,8 @@ public class SearchExecutionService {
     }
 
     private void submitBatch(BatchSubmission batch) {
-        OutscraperSearchOptions options = new OutscraperSearchOptions(QUERY_LANGUAGE, QUERY_REGION, pagesPerQuery);
+        OutscraperSearchOptions options = new OutscraperSearchOptions(
+                QUERY_LANGUAGE, QUERY_REGION, pagesPerQuery, QUERY_TBS_PAST_2_YEARS);
         try {
             OutscraperSubmitResult result = outscraperSearchPort.submitBatch(batch.queryTexts(), options);
             persistenceService.markBatchSubmitted(batch.batchId(), result);
