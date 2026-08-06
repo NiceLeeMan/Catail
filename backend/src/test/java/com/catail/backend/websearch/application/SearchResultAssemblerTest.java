@@ -106,6 +106,49 @@ class SearchResultAssemblerTest {
     }
 
     @Test
+    @DisplayName("상대경로 URL(/goto?...)만 있는 결과는 SearchResult로 저장되지 않는다")
+    void assembleAndComplete_relativeUrl_isNotSaved() throws Exception {
+        createAssembler();
+        SearchQuery query = queryWithId(100L);
+        given(searchQueryRepository.findBySearchExecutionIdAndQueryText(1L, "SK hynix HBM suppliers"))
+                .willReturn(Optional.of(query));
+        given(searchBatchRepository.findById(10L)).willReturn(Optional.of(SearchBatch.create(1L)));
+
+        List<OutscraperQueryResult> data = List.of(new OutscraperQueryResult("SK hynix HBM suppliers", List.of(
+                new OutscraperOrganicResult("제목", "/goto?url=CAESdgHuR6pNcS5SZJg7HAOyD0OR")
+        )));
+
+        assembler.assembleAndComplete(1L, 10L, data);
+
+        verify(searchResultRepository, never()).save(any());
+        verify(searchResultQueryRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("정상 URL과 상대경로 URL이 섞이면 정상 URL만 정규화되어 저장된다")
+    void assembleAndComplete_mixedValidAndInvalidUrls_savesOnlyValidUrl() throws Exception {
+        createAssembler();
+        SearchQuery query = queryWithId(100L);
+        given(searchQueryRepository.findBySearchExecutionIdAndQueryText(1L, "SK hynix HBM suppliers"))
+                .willReturn(Optional.of(query));
+        given(searchResultRepository.findBySearchExecutionIdAndCrawlUrl(1L, "https://example.com/a"))
+                .willReturn(Optional.empty());
+        given(searchResultRepository.save(any())).willAnswer(invocation -> invocation.getArgument(0));
+        given(searchResultQueryRepository.existsById(any())).willReturn(false);
+        given(searchBatchRepository.findById(10L)).willReturn(Optional.of(SearchBatch.create(1L)));
+
+        List<OutscraperQueryResult> data = List.of(new OutscraperQueryResult("SK hynix HBM suppliers", List.of(
+                new OutscraperOrganicResult("제목1", "https://example.com/a?utm_source=x"),
+                new OutscraperOrganicResult("제목2", "/search?q=SK하이닉스+HBM")
+        )));
+
+        assembler.assembleAndComplete(1L, 10L, data);
+
+        verify(searchResultRepository, times(1)).save(argThat(
+                result -> result.getCrawlUrl().equals("https://example.com/a")));
+    }
+
+    @Test
     @DisplayName("저장된 SearchQuery와 매칭되지 않는 검색어는 건너뛰고 배치는 SUCCESS로 처리한다")
     void assembleAndComplete_unmatchedQuery_skipsButCompletesBatch() {
         createAssembler();
