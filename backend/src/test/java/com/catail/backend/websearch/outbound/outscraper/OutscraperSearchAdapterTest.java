@@ -36,7 +36,7 @@ class OutscraperSearchAdapterTest {
     void submitBatch_repeatsQueryParamForEachText() {
         mockServer.expect(request -> {
             String uri = request.getURI().toString();
-            assertThat(uri).contains("/google-search");
+            assertThat(uri).contains("/google-search-news");
             assertThat(uri).contains("query=supplierQuery1");
             assertThat(uri).contains("query=supplierQuery2");
             assertThat(uri).contains("pagesPerQuery=1");
@@ -78,22 +78,18 @@ class OutscraperSearchAdapterTest {
 
     @Test
     @DisplayName("Success 상태 응답이면 query/title/link를 파싱해 반환한다")
-    void pollJob_success_parsesQueryAndOrganicResults() {
+    void pollJob_success_parsesQueryAndNewsResults() {
         mockServer.expect(method(GET)).andRespond(withSuccess("""
                 {
                   "id": "job-123",
                   "status": "Success",
                   "data": [
-                    {
-                      "query": "SK hynix HBM suppliers",
-                      "organic_results": [
-                        { "title": "제목1", "link": "https://example.com/a?utm_source=x#frag" }
-                      ]
-                    },
-                    {
-                      "query": "SK hynix HBM customers",
-                      "organic_results": []
-                    }
+                    [
+                      { "query": "SK hynix HBM suppliers", "position": 1, "title": "제목1", "body": "본문1", "posted": "1 day ago", "link": "https://example.com/a?utm_source=x#frag" }
+                    ],
+                    [
+                      { "query": "SK hynix HBM customers", "position": 1, "title": "제목2", "body": "본문2", "posted": "2 days ago", "link": "https://example.com/b" }
+                    ]
                   ]
                 }
                 """, MediaType.APPLICATION_JSON));
@@ -103,9 +99,38 @@ class OutscraperSearchAdapterTest {
         assertThat(result.status()).isEqualTo(OutscraperJobStatus.SUCCESS);
         assertThat(result.data()).hasSize(2);
         assertThat(result.data().get(0).query()).isEqualTo("SK hynix HBM suppliers");
-        assertThat(result.data().get(0).organicResults()).containsExactly(
-                new OutscraperOrganicResult("제목1", "https://example.com/a?utm_source=x#frag"));
-        assertThat(result.data().get(1).organicResults()).isEmpty();
+        assertThat(result.data().get(0).newsResults()).containsExactly(
+                new OutscraperNewsResult("제목1", "https://example.com/a?utm_source=x#frag"));
+        assertThat(result.data().get(1).query()).isEqualTo("SK hynix HBM customers");
+        assertThat(result.data().get(1).newsResults()).containsExactly(
+                new OutscraperNewsResult("제목2", "https://example.com/b"));
+    }
+
+    @Test
+    @DisplayName("서로 다른 페이지에 같은 query가 나오면 하나의 결과로 그룹화된다")
+    void pollJob_success_groupsSameQueryAcrossPages() {
+        mockServer.expect(method(GET)).andRespond(withSuccess("""
+                {
+                  "id": "job-123",
+                  "status": "Success",
+                  "data": [
+                    [
+                      { "query": "SK hynix HBM suppliers", "title": "제목1", "link": "https://example.com/a" }
+                    ],
+                    [
+                      { "query": "SK hynix HBM suppliers", "title": "제목2", "link": "https://example.com/b" }
+                    ]
+                  ]
+                }
+                """, MediaType.APPLICATION_JSON));
+
+        OutscraperPollResult result = adapter.pollJob("job-123");
+
+        assertThat(result.data()).hasSize(1);
+        assertThat(result.data().get(0).query()).isEqualTo("SK hynix HBM suppliers");
+        assertThat(result.data().get(0).newsResults()).containsExactly(
+                new OutscraperNewsResult("제목1", "https://example.com/a"),
+                new OutscraperNewsResult("제목2", "https://example.com/b"));
     }
 
     @Test

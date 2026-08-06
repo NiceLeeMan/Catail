@@ -13,7 +13,7 @@ public final class UrlNormalizer {
         if (rawUrl == null || rawUrl.isBlank()) {
             return null;
         }
-        // Outscraper의 organic_results에는 실제 기사 URL이 아니라 "관련 검색" 등
+        // Outscraper 뉴스 검색 결과에는 실제 기사 URL이 아니라 "관련 검색" 등
         // Google 내부 상대경로(/goto?url=..., /search?...)가 섞여 오는 경우가 있어 걸러낸다.
         if (!isAbsoluteHttpUrl(rawUrl)) {
             return null;

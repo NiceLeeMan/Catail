@@ -4,6 +4,6 @@ import java.util.List;
 
 public record OutscraperQueryResult(
         String query,
-        List<OutscraperOrganicResult> organicResults
+        List<OutscraperNewsResult> newsResults
 ) {
 }

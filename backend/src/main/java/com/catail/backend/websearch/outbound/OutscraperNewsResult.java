@@ -1,6 +1,6 @@
 package com.catail.backend.websearch.outbound;
 
-public record OutscraperOrganicResult(
+public record OutscraperNewsResult(
         String title,
         String link
 ) {

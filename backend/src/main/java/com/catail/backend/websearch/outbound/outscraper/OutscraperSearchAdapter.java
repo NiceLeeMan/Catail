@@ -13,7 +13,9 @@ import org.springframework.web.client.RestClientException;
 import tools.jackson.databind.JsonNode;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 @Slf4j
@@ -34,7 +36,7 @@ public class OutscraperSearchAdapter implements OutscraperSearchPort {
         try {
             JsonNode body = outscraperApiRestClient.get()
                     .uri(uriBuilder -> uriBuilder
-                            .path("/google-search")
+                            .path("/google-search-news")
                             .queryParam("query", queryTexts)
                             .queryParam("pagesPerQuery", options.pagesPerQuery())
                             .queryParam("language", options.language())
@@ -103,17 +105,22 @@ public class OutscraperSearchAdapter implements OutscraperSearchPort {
         if (!dataNode.isArray()) {
             return List.of();
         }
-        List<OutscraperQueryResult> results = new ArrayList<>();
-        for (JsonNode item : dataNode) {
-            String query = item.path("query").asString("");
-            List<OutscraperOrganicResult> organicResults = new ArrayList<>();
-            for (JsonNode organic : item.path("organic_results")) {
-                organicResults.add(new OutscraperOrganicResult(
-                        organic.path("title").asString(""),
-                        organic.path("link").asString("")
-                ));
+        Map<String, List<OutscraperNewsResult>> grouped = new LinkedHashMap<>();
+        for (JsonNode page : dataNode) {
+            if (!page.isArray()) {
+                continue;
             }
-            results.add(new OutscraperQueryResult(query, organicResults));
+            for (JsonNode item : page) {
+                String query = item.path("query").asString("");
+                grouped.computeIfAbsent(query, k -> new ArrayList<>())
+                        .add(new OutscraperNewsResult(
+                                item.path("title").asString(""),
+                                item.path("link").asString("")));
+            }
+        }
+        List<OutscraperQueryResult> results = new ArrayList<>();
+        for (Map.Entry<String, List<OutscraperNewsResult>> entry : grouped.entrySet()) {
+            results.add(new OutscraperQueryResult(entry.getKey(), entry.getValue()));
         }
         return results;
     }

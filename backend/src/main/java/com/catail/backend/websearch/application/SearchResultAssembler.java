@@ -1,7 +1,7 @@
 package com.catail.backend.websearch.application;
 
 import com.catail.backend.websearch.db.*;
-import com.catail.backend.websearch.outbound.OutscraperOrganicResult;
+import com.catail.backend.websearch.outbound.OutscraperNewsResult;
 import com.catail.backend.websearch.outbound.OutscraperQueryResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,13 +49,13 @@ public class SearchResultAssembler {
             return;
         }
 
-        for (OutscraperOrganicResult organic : queryResult.organicResults()) {
-            linkResult(searchExecutionId, query.getId(), organic);
+        for (OutscraperNewsResult newsResult : queryResult.newsResults()) {
+            linkResult(searchExecutionId, query.getId(), newsResult);
         }
     }
 
-    private void linkResult(Long searchExecutionId, Long searchQueryId, OutscraperOrganicResult organic) {
-        String rawUrl = organic.link();
+    private void linkResult(Long searchExecutionId, Long searchQueryId, OutscraperNewsResult newsResult) {
+        String rawUrl = newsResult.link();
         if (rawUrl == null || rawUrl.isBlank()) {
             return;
         }
@@ -69,7 +69,7 @@ public class SearchResultAssembler {
         SearchResult result = searchResultRepository
                 .findBySearchExecutionIdAndCrawlUrl(searchExecutionId, normalizedUrl)
                 .orElseGet(() -> searchResultRepository.save(
-                        SearchResult.create(searchExecutionId, organic.title(), normalizedUrl)));
+                        SearchResult.create(searchExecutionId, newsResult.title(), normalizedUrl)));
 
         SearchResultQueryId linkId = new SearchResultQueryId(result.getId(), searchQueryId);
         if (!searchResultQueryRepository.existsById(linkId)) {

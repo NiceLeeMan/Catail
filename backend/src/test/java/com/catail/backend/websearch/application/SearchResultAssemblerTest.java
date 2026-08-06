@@ -3,7 +3,7 @@ package com.catail.backend.websearch.application;
 import com.catail.backend.searchplan.domain.Criterion;
 import com.catail.backend.websearch.db.*;
 import com.catail.backend.websearch.domain.SearchBatchStatus;
-import com.catail.backend.websearch.outbound.OutscraperOrganicResult;
+import com.catail.backend.websearch.outbound.OutscraperNewsResult;
 import com.catail.backend.websearch.outbound.OutscraperQueryResult;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -69,8 +69,8 @@ class SearchResultAssemblerTest {
         given(searchBatchRepository.findById(10L)).willReturn(Optional.of(SearchBatch.create(1L)));
 
         List<OutscraperQueryResult> data = List.of(new OutscraperQueryResult("SK hynix HBM suppliers", List.of(
-                new OutscraperOrganicResult("제목1", "https://example.com/a?utm_source=x"),
-                new OutscraperOrganicResult("제목2", "https://example.com/a#frag")
+                new OutscraperNewsResult("제목1", "https://example.com/a?utm_source=x"),
+                new OutscraperNewsResult("제목2", "https://example.com/a#frag")
         )));
 
         assembler.assembleAndComplete(1L, 10L, data);
@@ -96,7 +96,7 @@ class SearchResultAssemblerTest {
         given(searchBatchRepository.findById(10L)).willReturn(Optional.of(SearchBatch.create(1L)));
 
         List<OutscraperQueryResult> data = List.of(new OutscraperQueryResult("SK hynix HBM suppliers", List.of(
-                new OutscraperOrganicResult("제목", "https://example.com/a")
+                new OutscraperNewsResult("제목", "https://example.com/a")
         )));
 
         assembler.assembleAndComplete(1L, 10L, data);
@@ -115,7 +115,7 @@ class SearchResultAssemblerTest {
         given(searchBatchRepository.findById(10L)).willReturn(Optional.of(SearchBatch.create(1L)));
 
         List<OutscraperQueryResult> data = List.of(new OutscraperQueryResult("SK hynix HBM suppliers", List.of(
-                new OutscraperOrganicResult("제목", "/goto?url=CAESdgHuR6pNcS5SZJg7HAOyD0OR")
+                new OutscraperNewsResult("제목", "/goto?url=CAESdgHuR6pNcS5SZJg7HAOyD0OR")
         )));
 
         assembler.assembleAndComplete(1L, 10L, data);
@@ -138,8 +138,8 @@ class SearchResultAssemblerTest {
         given(searchBatchRepository.findById(10L)).willReturn(Optional.of(SearchBatch.create(1L)));
 
         List<OutscraperQueryResult> data = List.of(new OutscraperQueryResult("SK hynix HBM suppliers", List.of(
-                new OutscraperOrganicResult("제목1", "https://example.com/a?utm_source=x"),
-                new OutscraperOrganicResult("제목2", "/search?q=SK하이닉스+HBM")
+                new OutscraperNewsResult("제목1", "https://example.com/a?utm_source=x"),
+                new OutscraperNewsResult("제목2", "/search?q=SK하이닉스+HBM")
         )));
 
         assembler.assembleAndComplete(1L, 10L, data);
@@ -157,7 +157,7 @@ class SearchResultAssemblerTest {
         given(searchBatchRepository.findById(10L)).willReturn(Optional.of(SearchBatch.create(1L)));
 
         List<OutscraperQueryResult> data = List.of(new OutscraperQueryResult("알 수 없는 검색어", List.of(
-                new OutscraperOrganicResult("제목", "https://example.com/a")
+                new OutscraperNewsResult("제목", "https://example.com/a")
         )));
 
         assembler.assembleAndComplete(1L, 10L, data);
