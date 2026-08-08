@@ -16,7 +16,8 @@ public class JinaApiClientConfig {
     public RestClient jinaApiRestClient(
             @Value("${jina.api.base-url}") String baseUrl,
             @Value("${jina.api.key}") String apiKey,
-            @Value("${jina.api.timeout-seconds}") long timeoutSeconds
+            @Value("${jina.api.timeout-seconds}") long timeoutSeconds,
+            @Value("${jina.api.preset}") String preset
     ) {
         HttpClient httpClient = HttpClient.newBuilder()
                 .connectTimeout(Duration.ofSeconds(5))
@@ -29,6 +30,7 @@ public class JinaApiClientConfig {
                 .requestFactory(requestFactory)
                 .defaultHeader("Authorization", "Bearer " + apiKey)
                 .defaultHeader("Accept", "application/json")
+                .defaultHeader("X-preset", preset)
                 .build();
     }
 }
