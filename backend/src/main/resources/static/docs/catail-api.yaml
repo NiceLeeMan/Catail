@@ -18,6 +18,12 @@ tags:
     description: |
       관련 참여주체 탐색 계획 포맷을 실제 LLM 호출로 생성해 눈으로 확인하기 위한 내부 전용 API.
       FE에 노출되는 정식 API가 아니며, 개발 중 OpenAI 연동 결과를 확인하는 용도로만 사용합니다.
+  - name: 크롤링 결과 개선 검증 (내부)
+    description: |
+      크롤링 본문(search_result.content)에 적용할 정제/노이즈 제거 로직의 실효성을 검증하기 위한
+      개발자 전용 API. 프로덕션 search_result 테이블은 읽기만 하고, 결과는 별도의
+      crawl_result_prove 테이블에 버전(V1, V2, V3...)으로 누적 저장됩니다.
+      FE에 노출되는 정식 API가 아니며 인증이 필요 없습니다.
 
 paths:
   /oauth2/authorization/google:
@@ -282,6 +288,80 @@ paths:
                     error:
                       code: SEARCH_PLAN_002
                       message: LLM 응답이 탐색 계획 포맷과 일치하지 않습니다.
+
+  /api/internal/crawl-result-prove/{searchResultId}:
+    post:
+      tags:
+        - 크롤링 결과 개선 검증 (내부)
+      summary: 다음 버전 생성 (V1 시딩 또는 개선 로직 적용)
+      description: |
+        해당 searchResultId로 저장된 버전이 하나도 없으면 프로덕션 search_result.content를
+        그대로 복사해 V1(raw)로 저장합니다.
+        이미 버전이 있으면 가장 최신 버전의 content에 현재 개선 로직(ContentImprover)을 적용해
+        다음 버전(V2, V3...)으로 저장합니다.
+        같은 API를 반복 호출할 때마다 한 버전씩 누적되며, 인증이 필요 없습니다.
+      parameters:
+        - name: searchResultId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 프로덕션 search_result 테이블의 id
+      responses:
+        '200':
+          description: 버전 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrawlResultProveResponse'
+        '404':
+          description: 존재하지 않는 search_result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  code: CRAWL_RESULT_PROVE_001
+                  message: 검색 결과를 찾을 수 없습니다.
+        '400':
+          description: 아직 크롤링이 완료되지 않은 search_result (content가 null)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  code: CRAWL_RESULT_PROVE_002
+                  message: 아직 크롤링이 완료되지 않은 검색 결과입니다.
+
+    get:
+      tags:
+        - 크롤링 결과 개선 검증 (내부)
+      summary: 버전 히스토리 조회
+      description: |
+        해당 searchResultId로 저장된 모든 버전(V1, V2, V3...)을 버전 오름차순으로 반환합니다.
+        개선 로직 적용 전/후 결과를 비교하는 용도입니다.
+      parameters:
+        - name: searchResultId
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 프로덕션 search_result 테이블의 id
+      responses:
+        '200':
+          description: 조회 성공 (버전이 없으면 빈 배열)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CrawlResultProveHistoryResponse'
 
 components:
   schemas:
@@ -561,6 +641,50 @@ components:
           example: true
         data:
           $ref: '#/components/schemas/SearchPlanFormat'
+        error:
+          type: object
+          nullable: true
+
+    CrawlResultProve:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        searchResultId:
+          type: integer
+          format: int64
+        version:
+          type: integer
+          example: 2
+        content:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    CrawlResultProveResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CrawlResultProve'
+        error:
+          type: object
+          nullable: true
+
+    CrawlResultProveHistoryResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/CrawlResultProve'
         error:
           type: object
           nullable: true
