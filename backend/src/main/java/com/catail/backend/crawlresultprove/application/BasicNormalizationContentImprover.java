@@ -1,13 +1,10 @@
 package com.catail.backend.crawlresultprove.application;
 
-import org.springframework.stereotype.Component;
-
 import java.text.Normalizer;
 import java.util.regex.MatchResult;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Component
 public class BasicNormalizationContentImprover implements ContentImprover {
 
     private static final Pattern CODE_FENCE = Pattern.compile("^```[^\\n]*$", Pattern.MULTILINE);
