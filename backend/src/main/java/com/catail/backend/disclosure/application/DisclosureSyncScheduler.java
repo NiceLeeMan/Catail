@@ -5,6 +5,7 @@ import com.catail.backend.company.db.CompanyRepository;
 import com.catail.backend.company.domain.Market;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
@@ -24,8 +25,15 @@ public class DisclosureSyncScheduler implements ApplicationRunner {
     private final DisclosureSyncService disclosureSyncService;
     private final CompanyRepository companyRepository;
 
+    @Value("${disclosure.sync.run-on-startup:true}")
+    private boolean runOnStartup;
+
     @Override
     public void run(ApplicationArguments args) {
+        if (!runOnStartup) {
+            log.info("disclosure.sync.run-on-startup=false, 기동 시 공시 동기화를 건너뜁니다.");
+            return;
+        }
         syncKospiDisclosures();
     }
 

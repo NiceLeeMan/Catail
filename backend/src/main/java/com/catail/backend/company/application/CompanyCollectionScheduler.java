@@ -3,6 +3,7 @@ package com.catail.backend.company.application;
 import com.catail.backend.company.domain.Market;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Profile;
@@ -20,8 +21,15 @@ public class CompanyCollectionScheduler implements ApplicationRunner {
     private final CompanyCollectionService companyCollectionService;
     private final CompanyOpenDartMappingService companyOpenDartMappingService;
 
+    @Value("${company.collection.run-on-startup:true}")
+    private boolean runOnStartup;
+
     @Override
     public void run(ApplicationArguments args) {
+        if (!runOnStartup) {
+            log.info("company.collection.run-on-startup=false, 기동 시 기업 수집을 건너뜁니다.");
+            return;
+        }
         collectKospi();
         collectNasdaq();
     }
