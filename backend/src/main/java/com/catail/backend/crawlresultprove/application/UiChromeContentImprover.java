@@ -1,7 +1,5 @@
 package com.catail.backend.crawlresultprove.application;
 
-import org.springframework.stereotype.Component;
-
 import java.util.Set;
 import java.util.regex.Pattern;
 
@@ -13,7 +11,6 @@ import java.util.regex.Pattern;
  * 같은 다른 기사 헤드라인을 노출하는 위젯은 문구 자체가 매번 달라 이 방식으로 식별할 수 없으므로
  * 4단계(본문 외 영역 제거) 범주로 남겨둔다.
  */
-@Component
 public class UiChromeContentImprover implements ContentImprover {
 
     private static final Set<String> UI_CHROME_LINES = Set.of(
