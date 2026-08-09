@@ -1,10 +1,7 @@
 package com.catail.backend.crawlresultprove.application;
 
-import org.springframework.stereotype.Component;
-
 import java.util.regex.Pattern;
 
-@Component
 public class ImagePlaceholderContentImprover implements ContentImprover {
 
     private static final Pattern IMAGE_PLACEHOLDER = Pattern.compile("\\(Image\\s+\\d+\\s*:[^)]*\\)");
