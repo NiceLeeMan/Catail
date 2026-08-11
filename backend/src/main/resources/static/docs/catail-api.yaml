@@ -357,6 +357,60 @@ paths:
         '404':
           $ref: '#/components/responses/CatalystNotFound'
 
+  /api/catalysts/{catalystId}/status:
+    patch:
+      tags:
+        - 카탈리스트
+      summary: 카탈리스트 상태변경
+      description: |
+        카탈리스트의 모니터링 상태(`status`)만 전환합니다. category/detail 수정은 별도 API(카탈리스트
+        수정)에서 처리하며 이 API의 대상이 아닙니다.
+
+        허용되는 전환: `INACTIVE → ACTIVE`, `ACTIVE → PAUSED`, `PAUSED → ACTIVE`.
+        `INACTIVE → PAUSED`를 포함해 정의되지 않은 모든 전이는 허용하지 않습니다. `INACTIVE`는
+        생성 시에만 설정되며 이 API의 요청값으로 받지 않습니다(`ACTIVE` 또는 `PAUSED`만 요청 가능).
+
+        `status = ACTIVE`로 전환되는 순간 시그널 수집 파이프라인의 트리거 대상이 되며, `PAUSED`로
+        전환되면 트리거 대상에서 제외됩니다(실제 트리거 로직은 별도 시그널 파이프라인 이슈에서 구현).
+
+        **오류 케이스**
+        - `catalystId`에 해당하는 카탈리스트가 없음 → 404 (CATALYST_002)
+        - 요청자가 해당 카탈리스트의 소유자가 아님 → 403 (CATALYST_003)
+        - 이미 소프트 삭제된 카탈리스트에 대한 상태변경 요청 → 400 (GLOBAL_003)
+        - 허용되지 않는 전환 경로 요청(예: `INACTIVE → PAUSED`) → 400 (GLOBAL_003)
+        - `status`가 정의된 값이 아니거나 `INACTIVE`를 요청함 → 400 (GLOBAL_003)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: catalystId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 상태를 변경할 카탈리스트 식별자
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalystStatusChangeRequest'
+            example:
+              status: PAUSED
+      responses:
+        '200':
+          description: 상태변경 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalystStatusResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/CatalystAccessDenied'
+        '404':
+          $ref: '#/components/responses/CatalystNotFound'
+
 components:
   schemas:
     AccessTokenResponse:
@@ -657,6 +711,43 @@ components:
           example: true
         data:
           $ref: '#/components/schemas/CatalystUpdateDetail'
+        error:
+          type: object
+          nullable: true
+
+    CatalystStatusChangeRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ACTIVE, PAUSED]
+          description: 전환할 상태 (INACTIVE는 생성 시에만 설정되며 요청값으로 받지 않음)
+
+    CatalystStatusDetail:
+      type: object
+      properties:
+        catalystId:
+          type: integer
+          format: int64
+          description: 카탈리스트 식별자
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, PAUSED]
+          description: 전환된 상태
+        updatedAt:
+          type: string
+          format: date-time
+          description: 상태 변경 시각
+
+    CatalystStatusResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CatalystStatusDetail'
         error:
           type: object
           nullable: true

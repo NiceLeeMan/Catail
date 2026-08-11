@@ -91,4 +91,8 @@ public class Catalyst {
         this.detail = detail;
         this.title = title;
     }
+
+    public void changeStatus(CatalystStatus status) {
+        this.status = status;
+    }
 }
