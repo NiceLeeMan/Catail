@@ -12,6 +12,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.util.List;
+
 import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
@@ -70,5 +72,42 @@ class CatalystRepositoryTest {
         long count = catalystRepository.countActiveByCategory(1L, 10L, CatalystCategory.SUPPLY_CHAIN);
 
         assertThat(count).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("findActive는 생성일시 내림차순(최신순)으로 정렬한다")
+    void findActive_ordersByCreatedAtDescending() throws InterruptedException {
+        Catalyst first = catalystRepository.save(catalyst(1L, 10L, CatalystCategory.SUPPLY_CHAIN, "공급망"));
+        Thread.sleep(10);
+        Catalyst second = catalystRepository.save(catalyst(1L, 10L, CatalystCategory.GOVERNANCE, "경영권/지배구조"));
+        Thread.sleep(10);
+        Catalyst third = catalystRepository.save(catalyst(1L, 10L, CatalystCategory.NEW_BUSINESS, "신사업/전략"));
+
+        List<Catalyst> result = catalystRepository.findActive(1L, 10L);
+
+        assertThat(result).extracting(Catalyst::getId)
+                .containsExactly(third.getId(), second.getId(), first.getId());
+    }
+
+    @Test
+    @DisplayName("findActive는 다른 사용자·다른 기업, 소프트 삭제된 카탈리스트는 제외한다")
+    void findActive_excludesOtherUserOrCompanyAndSoftDeleted() {
+        Catalyst target = catalystRepository.save(catalyst(1L, 10L, CatalystCategory.SUPPLY_CHAIN, "공급망"));
+        catalystRepository.save(catalyst(2L, 10L, CatalystCategory.SUPPLY_CHAIN, "공급망"));
+        catalystRepository.save(catalyst(1L, 20L, CatalystCategory.SUPPLY_CHAIN, "공급망"));
+        catalystRepository.save(softDeleted(1L, 10L, CatalystCategory.GOVERNANCE, "경영권/지배구조"));
+
+        List<Catalyst> result = catalystRepository.findActive(1L, 10L);
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getId()).isEqualTo(target.getId());
+    }
+
+    @Test
+    @DisplayName("findActive는 카탈리스트가 없으면 빈 목록을 반환한다")
+    void findActive_noCatalysts_returnsEmptyList() {
+        List<Catalyst> result = catalystRepository.findActive(1L, 999L);
+
+        assertThat(result).isEmpty();
     }
 }

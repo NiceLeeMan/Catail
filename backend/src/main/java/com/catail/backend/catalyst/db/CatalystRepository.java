@@ -5,10 +5,16 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
+
 public interface CatalystRepository extends JpaRepository<Catalyst, Long> {
 
     @Query("SELECT COUNT(c) FROM Catalyst c WHERE c.userId = :userId AND c.companyId = :companyId AND c.deletedAt IS NULL")
     long countActive(@Param("userId") Long userId, @Param("companyId") Long companyId);
+
+    @Query("SELECT c FROM Catalyst c WHERE c.userId = :userId AND c.companyId = :companyId "
+            + "AND c.deletedAt IS NULL ORDER BY c.createdAt DESC")
+    List<Catalyst> findActive(@Param("userId") Long userId, @Param("companyId") Long companyId);
 
     @Query("SELECT COUNT(c) FROM Catalyst c WHERE c.userId = :userId AND c.companyId = :companyId "
             + "AND c.category = :category AND c.deletedAt IS NULL")
