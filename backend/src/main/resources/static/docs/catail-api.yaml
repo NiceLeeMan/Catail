@@ -306,6 +306,57 @@ paths:
         '404':
           $ref: '#/components/responses/CatalystNotFound'
 
+    patch:
+      tags:
+        - 카탈리스트
+      summary: 카탈리스트 수정
+      description: |
+        사용자가 자신이 등록한 카탈리스트의 `category`와 `detail`을 수정합니다. 대상 기업 변경과
+        `status`(모니터링 상태) 변경은 이 API의 범위가 아닙니다(`status`는 별도 상태변경 API에서 처리).
+
+        `category`가 변경되는 경우, `title`을 변경된 category 기준으로 생성 시와 동일한 규칙
+        (동일 기업 내 동일 category의 현재 유효 개수 기준 순번 부여)으로 재계산합니다. `category`가
+        그대로면 `title`은 변경되지 않습니다.
+
+        **오류 케이스**
+        - `catalystId`에 해당하는 카탈리스트가 없음 → 404 (CATALYST_002)
+        - 요청자가 해당 카탈리스트의 소유자가 아님 → 403 (CATALYST_003)
+        - 이미 소프트 삭제된 카탈리스트에 대한 수정 요청 → 400 (GLOBAL_003)
+        - `category`가 정의된 6개 값이 아님 → 400 (GLOBAL_003)
+        - `detail`이 10~300자를 벗어남 → 400 (GLOBAL_003)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: catalystId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 수정할 카탈리스트 식별자
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CatalystUpdateRequest'
+            example:
+              category: SUPPLY_CHAIN
+              detail: HBM 공급망 관련 SK하이닉스 및 주요 파운드리向 계약 동향
+      responses:
+        '200':
+          description: 수정 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalystUpdateResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/CatalystAccessDenied'
+        '404':
+          $ref: '#/components/responses/CatalystNotFound'
+
 components:
   schemas:
     AccessTokenResponse:
@@ -570,6 +621,42 @@ components:
           example: true
         data:
           $ref: '#/components/schemas/CatalystDetail'
+        error:
+          type: object
+          nullable: true
+
+    CatalystUpdateRequest:
+      type: object
+      required: [category, detail]
+      properties:
+        category:
+          type: string
+          enum: [FINANCIAL_PERFORMANCE, REGULATION_POLICY, SUPPLY_CHAIN, COMPETITIVE_LANDSCAPE, GOVERNANCE, NEW_BUSINESS]
+          description: 관찰 카테고리 (단일 선택)
+        detail:
+          type: string
+          minLength: 10
+          maxLength: 300
+          description: 상세내용 (10~300자, 필수)
+
+    CatalystUpdateDetail:
+      allOf:
+        - $ref: '#/components/schemas/CatalystDetail'
+        - type: object
+          properties:
+            updatedAt:
+              type: string
+              format: date-time
+              description: 수정 시각
+
+    CatalystUpdateResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/CatalystUpdateDetail'
         error:
           type: object
           nullable: true
