@@ -76,8 +76,6 @@ public class CatalystCreateService {
 
     private String generateTitle(Long userId, Long companyId, CatalystCategory category) {
         long sameCategoryCount = catalystRepository.countActiveByCategory(userId, companyId, category);
-        return sameCategoryCount == 0
-                ? category.getLabel()
-                : category.getLabel() + " #" + (sameCategoryCount + 1);
+        return CatalystTitleGenerator.generate(category, sameCategoryCount);
     }
 }
