@@ -3,8 +3,10 @@ package com.catail.backend.catalyst.inbound;
 import com.catail.backend.catalyst.application.CatalystCreateService;
 import com.catail.backend.catalyst.application.CatalystDeleteService;
 import com.catail.backend.catalyst.application.CatalystErrorCode;
+import com.catail.backend.catalyst.application.CatalystUpdateService;
 import com.catail.backend.company.application.CompanyErrorCode;
 import com.catail.backend.global.BusinessException;
+import com.catail.backend.global.GlobalErrorCode;
 import com.catail.backend.global.jwt.JwtAuthenticationFilter;
 import jakarta.servlet.FilterChain;
 import org.junit.jupiter.api.AfterEach;
@@ -42,6 +44,7 @@ import static org.springframework.restdocs.payload.PayloadDocumentation.response
 import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
 import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -56,6 +59,7 @@ class CatalystControllerTest {
 
     @MockitoBean private CatalystCreateService catalystCreateService;
     @MockitoBean private CatalystDeleteService catalystDeleteService;
+    @MockitoBean private CatalystUpdateService catalystUpdateService;
     @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @BeforeEach
@@ -87,6 +91,15 @@ class CatalystControllerTest {
                   "status": "%s"
                 }
                 """.formatted(category, detail, status);
+    }
+
+    private String updateRequestJson(String category, String detail) {
+        return """
+                {
+                  "category": "%s",
+                  "detail": "%s"
+                }
+                """.formatted(category, detail);
     }
 
     @Nested
@@ -212,6 +225,99 @@ class CatalystControllerTest {
             mockMvc.perform(delete("/api/catalysts/{catalystId}", 2L))
                     .andExpect(status().isForbidden())
                     .andExpect(jsonPath("$.error.code").value("CATALYST_003"));
+        }
+    }
+
+    @Nested
+    @DisplayName("PATCH /api/catalysts/{catalystId}")
+    class Update {
+
+        @Test
+        @DisplayName("정상 요청이면 200과 수정된 카탈리스트를 반환한다")
+        void update_valid_returns200() throws Exception {
+            CatalystUpdateResponse response = new CatalystUpdateResponse(
+                    1L, "경영권/지배구조 #2", "KOSPI", "005930", "GOVERNANCE",
+                    "변경된 상세내용 10자 이상 작성", "ACTIVE",
+                    LocalDateTime.of(2026, 8, 11, 12, 0), LocalDateTime.of(2026, 8, 12, 9, 0));
+            given(catalystUpdateService.update(eq(1L), eq(1L), any())).willReturn(response);
+
+            mockMvc.perform(patch("/api/catalysts/{catalystId}", 1L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(updateRequestJson("GOVERNANCE", "변경된 상세내용 10자 이상 작성")))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.title").value("경영권/지배구조 #2"))
+                    .andDo(document("catalyst/update",
+                            pathParameters(
+                                    parameterWithName("catalystId").description("수정할 카탈리스트 식별자")
+                            ),
+                            requestFields(
+                                    fieldWithPath("category").description("관찰 카테고리 (6개 값 중 하나)"),
+                                    fieldWithPath("detail").description("상세내용 (10~300자)")
+                            ),
+                            responseFields(
+                                    fieldWithPath("success").description("성공 여부"),
+                                    fieldWithPath("data.catalystId").description("카탈리스트 식별자"),
+                                    fieldWithPath("data.title").description("재계산된 제목"),
+                                    fieldWithPath("data.market").description("대상 기업 상장시장"),
+                                    fieldWithPath("data.stockCode").description("대상 기업 종목코드"),
+                                    fieldWithPath("data.category").description("변경된 관찰 카테고리"),
+                                    fieldWithPath("data.detail").description("변경된 상세내용"),
+                                    fieldWithPath("data.status").description("현재 상태 (변경되지 않음)"),
+                                    fieldWithPath("data.createdAt").description("생성 시각"),
+                                    fieldWithPath("data.updatedAt").description("수정 시각"),
+                                    fieldWithPath("error").description("에러 정보 (성공 시 null)")
+                                            .optional().type(JsonFieldType.NULL)
+                            )
+                    ));
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 catalystId면 404를 반환한다")
+        void update_notFound_returns404() throws Exception {
+            willThrow(new BusinessException(CatalystErrorCode.CATALYST_NOT_FOUND))
+                    .given(catalystUpdateService).update(eq(1L), eq(999L), any());
+
+            mockMvc.perform(patch("/api/catalysts/{catalystId}", 999L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(updateRequestJson("SUPPLY_CHAIN", "변경된 상세내용 10자 이상 작성")))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error.code").value("CATALYST_002"));
+        }
+
+        @Test
+        @DisplayName("소유자가 아니면 403을 반환한다")
+        void update_notOwner_returns403() throws Exception {
+            willThrow(new BusinessException(CatalystErrorCode.CATALYST_ACCESS_DENIED))
+                    .given(catalystUpdateService).update(eq(1L), eq(2L), any());
+
+            mockMvc.perform(patch("/api/catalysts/{catalystId}", 2L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(updateRequestJson("SUPPLY_CHAIN", "변경된 상세내용 10자 이상 작성")))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.error.code").value("CATALYST_003"));
+        }
+
+        @Test
+        @DisplayName("삭제된 카탈리스트면 400을 반환한다")
+        void update_deletedCatalyst_returns400() throws Exception {
+            willThrow(new BusinessException(GlobalErrorCode.INVALID_INPUT))
+                    .given(catalystUpdateService).update(eq(1L), eq(3L), any());
+
+            mockMvc.perform(patch("/api/catalysts/{catalystId}", 3L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(updateRequestJson("SUPPLY_CHAIN", "변경된 상세내용 10자 이상 작성")))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.code").value("GLOBAL_003"));
+        }
+
+        @Test
+        @DisplayName("detail이 10자 미만이면 400을 반환한다")
+        void update_detailTooShort_returns400() throws Exception {
+            mockMvc.perform(patch("/api/catalysts/{catalystId}", 1L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(updateRequestJson("SUPPLY_CHAIN", "짧음")))
+                    .andExpect(status().isBadRequest());
         }
     }
 }
