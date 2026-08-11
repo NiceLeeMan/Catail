@@ -229,6 +229,43 @@ paths:
         '404':
           $ref: '#/components/responses/DisclosureCompanyNotFound'
 
+  /api/companies/{companyId}/catalysts:
+    get:
+      tags:
+        - 카탈리스트
+      summary: 카탈리스트 목록 조회
+      description: |
+        기업 상세화면의 카탈리스트 탭에서, 로그인한 사용자가 해당 기업에 등록한(삭제되지 않은)
+        카탈리스트 목록을 조회합니다. `createdAt` 기준 내림차순(최신순)으로 정렬되며, 기업당
+        카탈리스트 상한이 3개로 고정돼 있어 페이지네이션은 두지 않습니다. 등록된 카탈리스트가
+        없으면 빈 배열을 반환합니다.
+
+        별도의 상세 조회 API는 없습니다 — 이 응답이 이미 카탈리스트 전체 필드를 포함합니다.
+
+        **오류 케이스**
+        - `companyId`에 해당하는 기업이 없음 → 404 (COMPANY_004)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: companyId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 대상 기업 ID
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalystListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '404':
+          $ref: '#/components/responses/CompanyNotFound'
+
   /api/catalysts:
     post:
       tags:
@@ -748,6 +785,50 @@ components:
           example: true
         data:
           $ref: '#/components/schemas/CatalystStatusDetail'
+        error:
+          type: object
+          nullable: true
+
+    CatalystListItem:
+      type: object
+      properties:
+        catalystId:
+          type: integer
+          format: int64
+          description: 카탈리스트 식별자
+        title:
+          type: string
+          description: 자동 생성된 제목
+        category:
+          type: string
+          enum: [FINANCIAL_PERFORMANCE, REGULATION_POLICY, SUPPLY_CHAIN, COMPETITIVE_LANDSCAPE, GOVERNANCE, NEW_BUSINESS]
+          description: 관찰 카테고리
+        detail:
+          type: string
+          description: 상세내용
+        status:
+          type: string
+          enum: [ACTIVE, INACTIVE, PAUSED]
+          description: 모니터링 상태
+        createdAt:
+          type: string
+          format: date-time
+          description: 생성 시각
+
+    CatalystListResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            catalysts:
+              type: array
+              items:
+                $ref: '#/components/schemas/CatalystListItem'
+              description: 카탈리스트 목록 (생성일시 내림차순)
         error:
           type: object
           nullable: true
