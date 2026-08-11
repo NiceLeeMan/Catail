@@ -2,6 +2,7 @@ package com.catail.backend.catalyst.inbound;
 
 import com.catail.backend.catalyst.application.CatalystCreateService;
 import com.catail.backend.catalyst.application.CatalystDeleteService;
+import com.catail.backend.catalyst.application.CatalystStatusChangeService;
 import com.catail.backend.catalyst.application.CatalystUpdateService;
 import com.catail.backend.global.ApiResponse;
 import com.catail.backend.global.web.CurrentUserId;
@@ -27,6 +28,7 @@ public class CatalystController {
     private final CatalystCreateService catalystCreateService;
     private final CatalystDeleteService catalystDeleteService;
     private final CatalystUpdateService catalystUpdateService;
+    private final CatalystStatusChangeService catalystStatusChangeService;
 
     @PostMapping
     public ResponseEntity<ApiResponse<CatalystCreateResponse>> create(
@@ -53,6 +55,16 @@ public class CatalystController {
             @Valid @RequestBody CatalystUpdateRequest request) {
 
         CatalystUpdateResponse response = catalystUpdateService.update(userId, catalystId, request);
+        return ResponseEntity.ok(ApiResponse.ok(response));
+    }
+
+    @PatchMapping("/{catalystId}/status")
+    public ResponseEntity<ApiResponse<CatalystStatusResponse>> changeStatus(
+            @CurrentUserId Long userId,
+            @PathVariable Long catalystId,
+            @Valid @RequestBody CatalystStatusChangeRequest request) {
+
+        CatalystStatusResponse response = catalystStatusChangeService.changeStatus(userId, catalystId, request);
         return ResponseEntity.ok(ApiResponse.ok(response));
     }
 }

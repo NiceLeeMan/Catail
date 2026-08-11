@@ -3,6 +3,7 @@ package com.catail.backend.catalyst.inbound;
 import com.catail.backend.catalyst.application.CatalystCreateService;
 import com.catail.backend.catalyst.application.CatalystDeleteService;
 import com.catail.backend.catalyst.application.CatalystErrorCode;
+import com.catail.backend.catalyst.application.CatalystStatusChangeService;
 import com.catail.backend.catalyst.application.CatalystUpdateService;
 import com.catail.backend.company.application.CompanyErrorCode;
 import com.catail.backend.global.BusinessException;
@@ -60,6 +61,7 @@ class CatalystControllerTest {
     @MockitoBean private CatalystCreateService catalystCreateService;
     @MockitoBean private CatalystDeleteService catalystDeleteService;
     @MockitoBean private CatalystUpdateService catalystUpdateService;
+    @MockitoBean private CatalystStatusChangeService catalystStatusChangeService;
     @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @BeforeEach
@@ -100,6 +102,14 @@ class CatalystControllerTest {
                   "detail": "%s"
                 }
                 """.formatted(category, detail);
+    }
+
+    private String statusRequestJson(String status) {
+        return """
+                {
+                  "status": "%s"
+                }
+                """.formatted(status);
     }
 
     @Nested
@@ -317,6 +327,90 @@ class CatalystControllerTest {
             mockMvc.perform(patch("/api/catalysts/{catalystId}", 1L)
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(updateRequestJson("SUPPLY_CHAIN", "짧음")))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("PATCH /api/catalysts/{catalystId}/status")
+    class ChangeStatus {
+
+        @Test
+        @DisplayName("허용된 전이면 200과 변경된 상태를 반환한다")
+        void changeStatus_allowedTransition_returns200() throws Exception {
+            CatalystStatusResponse response = new CatalystStatusResponse(
+                    1L, "PAUSED", LocalDateTime.of(2026, 8, 12, 9, 0));
+            given(catalystStatusChangeService.changeStatus(eq(1L), eq(1L), any())).willReturn(response);
+
+            mockMvc.perform(patch("/api/catalysts/{catalystId}/status", 1L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(statusRequestJson("PAUSED")))
+                    .andExpect(status().isOk())
+                    .andExpect(jsonPath("$.success").value(true))
+                    .andExpect(jsonPath("$.data.status").value("PAUSED"))
+                    .andDo(document("catalyst/status",
+                            pathParameters(
+                                    parameterWithName("catalystId").description("상태를 변경할 카탈리스트 식별자")
+                            ),
+                            requestFields(
+                                    fieldWithPath("status").description("전환할 상태 (ACTIVE 또는 PAUSED)")
+                            ),
+                            responseFields(
+                                    fieldWithPath("success").description("성공 여부"),
+                                    fieldWithPath("data.catalystId").description("카탈리스트 식별자"),
+                                    fieldWithPath("data.status").description("전환된 상태"),
+                                    fieldWithPath("data.updatedAt").description("상태 변경 시각"),
+                                    fieldWithPath("error").description("에러 정보 (성공 시 null)")
+                                            .optional().type(JsonFieldType.NULL)
+                            )
+                    ));
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 catalystId면 404를 반환한다")
+        void changeStatus_notFound_returns404() throws Exception {
+            willThrow(new BusinessException(CatalystErrorCode.CATALYST_NOT_FOUND))
+                    .given(catalystStatusChangeService).changeStatus(eq(1L), eq(999L), any());
+
+            mockMvc.perform(patch("/api/catalysts/{catalystId}/status", 999L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(statusRequestJson("ACTIVE")))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error.code").value("CATALYST_002"));
+        }
+
+        @Test
+        @DisplayName("소유자가 아니면 403을 반환한다")
+        void changeStatus_notOwner_returns403() throws Exception {
+            willThrow(new BusinessException(CatalystErrorCode.CATALYST_ACCESS_DENIED))
+                    .given(catalystStatusChangeService).changeStatus(eq(1L), eq(2L), any());
+
+            mockMvc.perform(patch("/api/catalysts/{catalystId}/status", 2L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(statusRequestJson("ACTIVE")))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.error.code").value("CATALYST_003"));
+        }
+
+        @Test
+        @DisplayName("허용되지 않는 전이면 400을 반환한다")
+        void changeStatus_disallowedTransition_returns400() throws Exception {
+            willThrow(new BusinessException(GlobalErrorCode.INVALID_INPUT))
+                    .given(catalystStatusChangeService).changeStatus(eq(1L), eq(3L), any());
+
+            mockMvc.perform(patch("/api/catalysts/{catalystId}/status", 3L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(statusRequestJson("PAUSED")))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.error.code").value("GLOBAL_003"));
+        }
+
+        @Test
+        @DisplayName("status 값이 비어있으면 400을 반환한다")
+        void changeStatus_blankStatus_returns400() throws Exception {
+            mockMvc.perform(patch("/api/catalysts/{catalystId}/status", 1L)
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(statusRequestJson("")))
                     .andExpect(status().isBadRequest());
         }
     }
