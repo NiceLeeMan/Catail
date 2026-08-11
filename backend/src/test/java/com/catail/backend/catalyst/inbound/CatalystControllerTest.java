@@ -1,6 +1,7 @@
 package com.catail.backend.catalyst.inbound;
 
 import com.catail.backend.catalyst.application.CatalystCreateService;
+import com.catail.backend.catalyst.application.CatalystDeleteService;
 import com.catail.backend.catalyst.application.CatalystErrorCode;
 import com.catail.backend.company.application.CompanyErrorCode;
 import com.catail.backend.global.BusinessException;
@@ -31,12 +32,16 @@ import java.util.List;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
 import static org.mockito.Mockito.doAnswer;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 import static org.springframework.restdocs.payload.PayloadDocumentation.fieldWithPath;
 import static org.springframework.restdocs.payload.PayloadDocumentation.requestFields;
 import static org.springframework.restdocs.payload.PayloadDocumentation.responseFields;
+import static org.springframework.restdocs.request.RequestDocumentation.parameterWithName;
+import static org.springframework.restdocs.request.RequestDocumentation.pathParameters;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -50,6 +55,7 @@ class CatalystControllerTest {
     @Autowired private WebApplicationContext context;
 
     @MockitoBean private CatalystCreateService catalystCreateService;
+    @MockitoBean private CatalystDeleteService catalystDeleteService;
     @MockitoBean private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @BeforeEach
@@ -167,6 +173,45 @@ class CatalystControllerTest {
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(requestJson("SUPPLY_CHAIN", "짧음", "ACTIVE")))
                     .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Nested
+    @DisplayName("DELETE /api/catalysts/{catalystId}")
+    class Delete {
+
+        @Test
+        @DisplayName("소유자가 요청하면 204를 반환한다")
+        void delete_owner_returns204() throws Exception {
+            mockMvc.perform(delete("/api/catalysts/{catalystId}", 1L))
+                    .andExpect(status().isNoContent())
+                    .andDo(document("catalyst/delete",
+                            pathParameters(
+                                    parameterWithName("catalystId").description("삭제할 카탈리스트 식별자")
+                            )
+                    ));
+        }
+
+        @Test
+        @DisplayName("존재하지 않는 catalystId면 404를 반환한다")
+        void delete_notFound_returns404() throws Exception {
+            willThrow(new BusinessException(CatalystErrorCode.CATALYST_NOT_FOUND))
+                    .given(catalystDeleteService).delete(eq(1L), eq(999L));
+
+            mockMvc.perform(delete("/api/catalysts/{catalystId}", 999L))
+                    .andExpect(status().isNotFound())
+                    .andExpect(jsonPath("$.error.code").value("CATALYST_002"));
+        }
+
+        @Test
+        @DisplayName("소유자가 아니면 403을 반환한다")
+        void delete_notOwner_returns403() throws Exception {
+            willThrow(new BusinessException(CatalystErrorCode.CATALYST_ACCESS_DENIED))
+                    .given(catalystDeleteService).delete(eq(1L), eq(2L));
+
+            mockMvc.perform(delete("/api/catalysts/{catalystId}", 2L))
+                    .andExpect(status().isForbidden())
+                    .andExpect(jsonPath("$.error.code").value("CATALYST_003"));
         }
     }
 }
