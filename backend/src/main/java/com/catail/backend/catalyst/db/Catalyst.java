@@ -85,4 +85,10 @@ public class Catalyst {
     public void softDelete() {
         this.deletedAt = LocalDateTime.now();
     }
+
+    public void update(CatalystCategory category, String detail, String title) {
+        this.category = category;
+        this.detail = detail;
+        this.title = title;
+    }
 }
