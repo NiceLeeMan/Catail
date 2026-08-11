@@ -81,4 +81,8 @@ public class Catalyst {
         catalyst.status = status;
         return catalyst;
     }
+
+    public void softDelete() {
+        this.deletedAt = LocalDateTime.now();
+    }
 }

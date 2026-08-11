@@ -8,12 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
-import org.springframework.test.util.ReflectionTestUtils;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
-
-import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -35,7 +32,7 @@ class CatalystRepositoryTest {
 
     private Catalyst softDeleted(Long userId, Long companyId, CatalystCategory category, String title) {
         Catalyst catalyst = catalyst(userId, companyId, category, title);
-        ReflectionTestUtils.setField(catalyst, "deletedAt", LocalDateTime.now());
+        catalyst.softDelete();
         return catalyst;
     }
 
