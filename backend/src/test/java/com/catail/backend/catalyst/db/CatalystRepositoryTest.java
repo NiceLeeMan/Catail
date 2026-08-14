@@ -110,4 +110,31 @@ class CatalystRepositoryTest {
 
         assertThat(result).isEmpty();
     }
+
+    @Test
+    @DisplayName("findAllByStatus는 사용자·기업에 관계없이 해당 상태이면서 삭제되지 않은 카탈리스트를 전부 반환한다")
+    void findAllByStatus_returnsMatchingAcrossAllUsers() {
+        Catalyst target1 = catalystRepository.save(catalyst(1L, 10L, CatalystCategory.SUPPLY_CHAIN, "공급망"));
+        Catalyst target2 = catalystRepository.save(catalyst(2L, 20L, CatalystCategory.SUPPLY_CHAIN, "공급망"));
+        Catalyst deleted = catalyst(1L, 30L, CatalystCategory.SUPPLY_CHAIN, "공급망");
+        deleted.softDelete();
+        catalystRepository.save(deleted);
+
+        List<Catalyst> result = catalystRepository.findAllByStatus(CatalystStatus.ACTIVE);
+
+        assertThat(result).extracting(Catalyst::getId)
+                .containsExactlyInAnyOrder(target1.getId(), target2.getId());
+    }
+
+    @Test
+    @DisplayName("findAllByStatus는 다른 상태의 카탈리스트는 포함하지 않는다")
+    void findAllByStatus_excludesOtherStatus() {
+        catalystRepository.save(catalyst(1L, 10L, CatalystCategory.SUPPLY_CHAIN, "공급망"));
+        catalystRepository.save(Catalyst.create(1L, 20L, CatalystCategory.SUPPLY_CHAIN,
+                "테스트용 상세내용 10자 이상 작성", "공급망", CatalystStatus.PAUSED));
+
+        List<Catalyst> result = catalystRepository.findAllByStatus(CatalystStatus.ACTIVE);
+
+        assertThat(result).hasSize(1);
+    }
 }

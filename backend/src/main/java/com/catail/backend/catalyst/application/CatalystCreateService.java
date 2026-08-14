@@ -12,6 +12,7 @@ import com.catail.backend.company.db.CompanyRepository;
 import com.catail.backend.global.BusinessException;
 import com.catail.backend.global.GlobalErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +27,7 @@ public class CatalystCreateService {
 
     private final CatalystRepository catalystRepository;
     private final CompanyRepository companyRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public CatalystCreateResponse create(Long userId, CatalystCreateRequest request) {
@@ -38,6 +40,10 @@ public class CatalystCreateService {
 
         Catalyst catalyst = catalystRepository.save(
                 Catalyst.create(userId, company.getId(), category, request.detail(), title, status));
+
+        if (catalyst.getStatus() == CatalystStatus.ACTIVE) {
+            applicationEventPublisher.publishEvent(new CatalystActivatedEvent(catalyst.getId()));
+        }
 
         return CatalystCreateResponse.from(catalyst, company);
     }

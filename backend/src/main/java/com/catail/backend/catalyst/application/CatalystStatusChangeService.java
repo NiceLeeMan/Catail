@@ -8,6 +8,7 @@ import com.catail.backend.catalyst.inbound.CatalystStatusResponse;
 import com.catail.backend.global.BusinessException;
 import com.catail.backend.global.GlobalErrorCode;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -20,6 +21,7 @@ public class CatalystStatusChangeService {
     private static final Set<CatalystStatus> REQUESTABLE_STATUSES = Set.of(CatalystStatus.ACTIVE, CatalystStatus.PAUSED);
 
     private final CatalystRepository catalystRepository;
+    private final ApplicationEventPublisher applicationEventPublisher;
 
     @Transactional
     public CatalystStatusResponse changeStatus(Long userId, Long catalystId, CatalystStatusChangeRequest request) {
@@ -31,8 +33,9 @@ public class CatalystStatusChangeService {
         assertTransitionAllowed(catalyst.getStatus(), target);
 
         catalyst.changeStatus(target);
-        // TODO(시그널 파이프라인 이슈): ACTIVE 전환 시 트리거 대상 등록 / PAUSED 전환 시 트리거 대상 제외 처리 필요.
-        //   실제 트리거 로직은 이 이슈 범위가 아니며, 여기가 그 연결 지점이 될 자리다.
+        if (target == CatalystStatus.ACTIVE) {
+            applicationEventPublisher.publishEvent(new CatalystActivatedEvent(catalyst.getId()));
+        }
 
         return CatalystStatusResponse.from(catalyst);
     }
