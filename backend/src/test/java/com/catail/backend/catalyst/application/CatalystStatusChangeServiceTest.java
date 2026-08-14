@@ -13,12 +13,16 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 class CatalystStatusChangeServiceTest {
@@ -28,6 +32,9 @@ class CatalystStatusChangeServiceTest {
 
     @Mock
     private CatalystRepository catalystRepository;
+
+    @Mock
+    private ApplicationEventPublisher applicationEventPublisher;
 
     private CatalystStatusChangeService catalystStatusChangeService;
 
@@ -40,7 +47,7 @@ class CatalystStatusChangeServiceTest {
     @Test
     @DisplayName("INACTIVE에서 ACTIVE로 전환할 수 있다")
     void changeStatus_inactiveToActive_succeeds() {
-        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository);
+        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository, applicationEventPublisher);
         Catalyst catalyst = catalyst(OWNER_ID, CatalystStatus.INACTIVE);
         given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst));
 
@@ -53,7 +60,7 @@ class CatalystStatusChangeServiceTest {
     @Test
     @DisplayName("ACTIVE에서 PAUSED로 전환할 수 있다")
     void changeStatus_activeToPaused_succeeds() {
-        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository);
+        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository, applicationEventPublisher);
         Catalyst catalyst = catalyst(OWNER_ID, CatalystStatus.ACTIVE);
         given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst));
 
@@ -66,7 +73,7 @@ class CatalystStatusChangeServiceTest {
     @Test
     @DisplayName("PAUSED에서 ACTIVE로 전환할 수 있다")
     void changeStatus_pausedToActive_succeeds() {
-        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository);
+        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository, applicationEventPublisher);
         Catalyst catalyst = catalyst(OWNER_ID, CatalystStatus.PAUSED);
         given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst));
 
@@ -77,9 +84,33 @@ class CatalystStatusChangeServiceTest {
     }
 
     @Test
+    @DisplayName("ACTIVE로 전환되면 CatalystActivatedEvent를 발행한다")
+    void changeStatus_toActive_publishesCatalystActivatedEvent() {
+        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository, applicationEventPublisher);
+        Catalyst catalyst = catalyst(OWNER_ID, CatalystStatus.PAUSED);
+        given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst));
+
+        catalystStatusChangeService.changeStatus(OWNER_ID, CATALYST_ID, new CatalystStatusChangeRequest("ACTIVE"));
+
+        verify(applicationEventPublisher).publishEvent(any(CatalystActivatedEvent.class));
+    }
+
+    @Test
+    @DisplayName("PAUSED로 전환되면 이벤트를 발행하지 않는다")
+    void changeStatus_toPaused_doesNotPublishEvent() {
+        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository, applicationEventPublisher);
+        Catalyst catalyst = catalyst(OWNER_ID, CatalystStatus.ACTIVE);
+        given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst));
+
+        catalystStatusChangeService.changeStatus(OWNER_ID, CATALYST_ID, new CatalystStatusChangeRequest("PAUSED"));
+
+        verifyNoInteractions(applicationEventPublisher);
+    }
+
+    @Test
     @DisplayName("INACTIVE에서 PAUSED로는 전환할 수 없다")
     void changeStatus_inactiveToPaused_throwsInvalidInput() {
-        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository);
+        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository, applicationEventPublisher);
         Catalyst catalyst = catalyst(OWNER_ID, CatalystStatus.INACTIVE);
         given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst));
 
@@ -93,7 +124,7 @@ class CatalystStatusChangeServiceTest {
     @Test
     @DisplayName("존재하지 않는 catalystId면 CATALYST_NOT_FOUND 예외가 발생한다")
     void changeStatus_notFound_throwsCatalystNotFound() {
-        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository);
+        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository, applicationEventPublisher);
         given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.empty());
 
         assertThatThrownBy(() -> catalystStatusChangeService.changeStatus(
@@ -106,7 +137,7 @@ class CatalystStatusChangeServiceTest {
     @Test
     @DisplayName("소유자가 아니면 CATALYST_ACCESS_DENIED 예외가 발생한다")
     void changeStatus_notOwner_throwsCatalystAccessDenied() {
-        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository);
+        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository, applicationEventPublisher);
         Catalyst catalyst = catalyst(2L, CatalystStatus.INACTIVE);
         given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst));
 
@@ -120,7 +151,7 @@ class CatalystStatusChangeServiceTest {
     @Test
     @DisplayName("삭제된 카탈리스트면 INVALID_INPUT 예외가 발생한다")
     void changeStatus_deletedCatalyst_throwsInvalidInput() {
-        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository);
+        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository, applicationEventPublisher);
         Catalyst catalyst = catalyst(OWNER_ID, CatalystStatus.ACTIVE);
         catalyst.softDelete();
         given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst));
@@ -135,7 +166,7 @@ class CatalystStatusChangeServiceTest {
     @Test
     @DisplayName("INACTIVE는 요청 가능한 status 값이 아니므로 INVALID_INPUT 예외가 발생한다")
     void changeStatus_requestInactive_throwsInvalidInput() {
-        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository);
+        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository, applicationEventPublisher);
         Catalyst catalyst = catalyst(OWNER_ID, CatalystStatus.ACTIVE);
         given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst));
 
@@ -149,7 +180,7 @@ class CatalystStatusChangeServiceTest {
     @Test
     @DisplayName("status가 정의된 값이 아니면 INVALID_INPUT 예외가 발생한다")
     void changeStatus_invalidStatus_throwsInvalidInput() {
-        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository);
+        catalystStatusChangeService = new CatalystStatusChangeService(catalystRepository, applicationEventPublisher);
         Catalyst catalyst = catalyst(OWNER_ID, CatalystStatus.ACTIVE);
         given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst));
 

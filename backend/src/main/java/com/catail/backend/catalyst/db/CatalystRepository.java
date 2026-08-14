@@ -1,6 +1,7 @@
 package com.catail.backend.catalyst.db;
 
 import com.catail.backend.catalyst.domain.CatalystCategory;
+import com.catail.backend.catalyst.domain.CatalystStatus;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -8,6 +9,9 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 public interface CatalystRepository extends JpaRepository<Catalyst, Long> {
+
+    @Query("SELECT c FROM Catalyst c WHERE c.status = :status AND c.deletedAt IS NULL")
+    List<Catalyst> findAllByStatus(@Param("status") CatalystStatus status);
 
     @Query("SELECT COUNT(c) FROM Catalyst c WHERE c.userId = :userId AND c.companyId = :companyId AND c.deletedAt IS NULL")
     long countActive(@Param("userId") Long userId, @Param("companyId") Long companyId);
