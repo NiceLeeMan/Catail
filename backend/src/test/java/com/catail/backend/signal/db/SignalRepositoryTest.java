@@ -117,4 +117,46 @@ class SignalRepositoryTest {
 
         assertThat(result).extracting(Signal::getId).containsExactly(second.getId(), first.getId());
     }
+
+    private Signal adoptedSignal(Long catalystId, String link, OffsetDateTime pubDate) {
+        Signal signal = Signal.create(catalystId, "제목", "요약", "https://origin.example.com/1",
+                link, pubDate, "언론사");
+        signal.changeStatus(SignalStatus.ADOPTED);
+        return signal;
+    }
+
+    @Test
+    @DisplayName("findTimeline은 발행일시(pubDate) 내림차순, 동일시각이면 id 내림차순으로 정렬한다")
+    void findTimeline_ordersByPubDateThenIdDescending() {
+        Signal older = signalRepository.save(adoptedSignal(1L, "https://n.news.naver.com/1",
+                OffsetDateTime.parse("2026-08-10T09:00:00+09:00")));
+        Signal newer = signalRepository.save(adoptedSignal(1L, "https://n.news.naver.com/2",
+                OffsetDateTime.parse("2026-08-12T09:00:00+09:00")));
+
+        List<Signal> result = signalRepository.findTimeline(1L, SignalStatus.ADOPTED);
+
+        assertThat(result).extracting(Signal::getId).containsExactly(newer.getId(), older.getId());
+    }
+
+    @Test
+    @DisplayName("findTimeline은 다른 카탈리스트이거나 ADOPTED가 아닌 시그널은 제외한다")
+    void findTimeline_excludesOtherCatalystOrNonAdopted() {
+        signalRepository.save(adoptedSignal(2L, "https://n.news.naver.com/1",
+                OffsetDateTime.parse("2026-08-10T09:00:00+09:00")));
+        signalRepository.save(signal(1L, "https://n.news.naver.com/2"));
+        Signal target = signalRepository.save(adoptedSignal(1L, "https://n.news.naver.com/3",
+                OffsetDateTime.parse("2026-08-11T09:00:00+09:00")));
+
+        List<Signal> result = signalRepository.findTimeline(1L, SignalStatus.ADOPTED);
+
+        assertThat(result).extracting(Signal::getId).containsExactly(target.getId());
+    }
+
+    @Test
+    @DisplayName("findTimeline은 채택된 시그널이 없으면 빈 목록을 반환한다")
+    void findTimeline_noAdoptedSignals_returnsEmptyList() {
+        List<Signal> result = signalRepository.findTimeline(999L, SignalStatus.ADOPTED);
+
+        assertThat(result).isEmpty();
+    }
 }

@@ -30,4 +30,8 @@ public interface SignalRepository extends JpaRepository<Signal, Long> {
             @Param("cursorCreatedAt") LocalDateTime cursorCreatedAt,
             @Param("cursorId") Long cursorId,
             Pageable pageable);
+
+    @Query("SELECT s FROM Signal s WHERE s.catalystId = :catalystId AND s.status = :status "
+            + "ORDER BY s.pubDate DESC, s.id DESC")
+    List<Signal> findTimeline(@Param("catalystId") Long catalystId, @Param("status") SignalStatus status);
 }
