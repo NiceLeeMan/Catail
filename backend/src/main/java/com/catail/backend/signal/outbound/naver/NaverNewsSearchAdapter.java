@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestClientResponseException;
+import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
 
@@ -19,9 +20,12 @@ public class NaverNewsSearchAdapter {
     private static final long RETRY_INTERVAL_MS = 2000;
 
     private final RestClient naverNewsApiRestClient;
+    private final ObjectMapper objectMapper;
 
-    public NaverNewsSearchAdapter(@Qualifier("naverNewsApiRestClient") RestClient naverNewsApiRestClient) {
+    public NaverNewsSearchAdapter(
+            @Qualifier("naverNewsApiRestClient") RestClient naverNewsApiRestClient, ObjectMapper objectMapper) {
         this.naverNewsApiRestClient = naverNewsApiRestClient;
+        this.objectMapper = objectMapper;
     }
 
     /**
@@ -31,13 +35,18 @@ public class NaverNewsSearchAdapter {
     public List<NaverNewsItem> search(String query) {
         for (int attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
             try {
-                NaverNewsSearchResponse response = naverNewsApiRestClient.get()
-                        .uri(uriBuilder -> uriBuilder.path("/v1/search/news.json")
+                String responseBody = naverNewsApiRestClient.get()
+                        .uri(uriBuilder -> uriBuilder.path("/search/v1/news")
                                 .queryParam("query", query)
                                 .queryParam("display", DISPLAY)
                                 .build())
                         .retrieve()
-                        .body(NaverNewsSearchResponse.class);
+                        .body(String.class);
+                // NAVER API HUB(apigw.ntruss.com)는 JSON 바디를 내려주면서도 Content-Type을
+                // text/plain으로 응답하는 경우가 있어, 메시지 컨버터 대신 문자열로 받아 직접 파싱한다.
+                NaverNewsSearchResponse response = responseBody == null || responseBody.isBlank()
+                        ? null
+                        : objectMapper.readValue(responseBody, NaverNewsSearchResponse.class);
                 return response == null || response.items() == null ? List.of() : response.items();
             } catch (RestClientResponseException e) {
                 if (!isRetryable(e.getStatusCode())) {
