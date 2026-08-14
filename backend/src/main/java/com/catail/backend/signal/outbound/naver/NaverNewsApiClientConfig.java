@@ -16,8 +16,8 @@ public class NaverNewsApiClientConfig {
     ) {
         return RestClient.builder()
                 .baseUrl(baseUrl)
-                .defaultHeader("X-Naver-Client-Id", clientId)
-                .defaultHeader("X-Naver-Client-Secret", clientSecret)
+                .defaultHeader("X-NCP-APIGW-API-KEY-ID", clientId)
+                .defaultHeader("X-NCP-APIGW-API-KEY", clientSecret)
                 .build();
     }
 }
