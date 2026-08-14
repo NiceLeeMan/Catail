@@ -7,11 +7,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.data.domain.PageRequest;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -70,5 +72,49 @@ class SignalRepositoryTest {
         boolean exists = signalRepository.existsByCatalystIdAndLink(1L, "https://n.news.naver.com/2");
 
         assertThat(exists).isFalse();
+    }
+
+    @Test
+    @DisplayName("findFirstPage는 생성일시 내림차순, 동일시각이면 id 내림차순으로 정렬한다")
+    void findFirstPage_ordersByCreatedAtThenIdDescending() throws InterruptedException {
+        Signal first = signalRepository.save(signal(1L, "https://n.news.naver.com/1"));
+        Thread.sleep(10);
+        Signal second = signalRepository.save(signal(1L, "https://n.news.naver.com/2"));
+        Thread.sleep(10);
+        Signal third = signalRepository.save(signal(1L, "https://n.news.naver.com/3"));
+
+        List<Signal> result = signalRepository.findFirstPage(1L, SignalStatus.PENDING, PageRequest.of(0, 10));
+
+        assertThat(result).extracting(Signal::getId)
+                .containsExactly(third.getId(), second.getId(), first.getId());
+    }
+
+    @Test
+    @DisplayName("findFirstPage는 다른 카탈리스트이거나 다른 status인 시그널은 제외한다")
+    void findFirstPage_excludesOtherCatalystOrStatus() {
+        signalRepository.save(signal(2L, "https://n.news.naver.com/1"));
+        Signal excluded = signal(1L, "https://n.news.naver.com/2");
+        excluded.changeStatus(SignalStatus.EXCLUDED);
+        signalRepository.save(excluded);
+        Signal target = signalRepository.save(signal(1L, "https://n.news.naver.com/3"));
+
+        List<Signal> result = signalRepository.findFirstPage(1L, SignalStatus.PENDING, PageRequest.of(0, 10));
+
+        assertThat(result).extracting(Signal::getId).containsExactly(target.getId());
+    }
+
+    @Test
+    @DisplayName("findNextPage는 커서 이후 데이터만 반환한다")
+    void findNextPage_returnsOnlyItemsAfterCursor() throws InterruptedException {
+        Signal first = signalRepository.save(signal(1L, "https://n.news.naver.com/1"));
+        Thread.sleep(10);
+        Signal second = signalRepository.save(signal(1L, "https://n.news.naver.com/2"));
+        Thread.sleep(10);
+        Signal third = signalRepository.save(signal(1L, "https://n.news.naver.com/3"));
+
+        List<Signal> result = signalRepository.findNextPage(
+                1L, SignalStatus.PENDING, third.getCreatedAt(), third.getId(), PageRequest.of(0, 10));
+
+        assertThat(result).extracting(Signal::getId).containsExactly(second.getId(), first.getId());
     }
 }
