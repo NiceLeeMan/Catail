@@ -2,7 +2,6 @@ package com.catail.backend.signal.application;
 
 import com.catail.backend.catalyst.application.CatalystErrorCode;
 import com.catail.backend.catalyst.db.Catalyst;
-import com.catail.backend.catalyst.db.CatalystRepository;
 import com.catail.backend.catalyst.domain.CatalystCategory;
 import com.catail.backend.catalyst.domain.CatalystStatus;
 import com.catail.backend.global.BusinessException;
@@ -20,7 +19,6 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -34,15 +32,15 @@ class SignalListServiceTest {
     private static final Long OWNER_ID = 1L;
     private static final Long CATALYST_ID = 10L;
 
-    @Mock private CatalystRepository catalystRepository;
+    @Mock private CatalystOwnershipValidator catalystOwnershipValidator;
     @Mock private SignalRepository signalRepository;
 
     private SignalListService service() {
-        return new SignalListService(catalystRepository, signalRepository);
+        return new SignalListService(catalystOwnershipValidator, signalRepository);
     }
 
-    private Catalyst catalyst(Long userId) {
-        return Catalyst.create(userId, 100L, CatalystCategory.SUPPLY_CHAIN,
+    private Catalyst catalyst() {
+        return Catalyst.create(OWNER_ID, 100L, CatalystCategory.SUPPLY_CHAIN,
                 "테스트용 상세내용 10자 이상 작성", "공급망", CatalystStatus.ACTIVE);
     }
 
@@ -52,9 +50,21 @@ class SignalListServiceTest {
     }
 
     @Test
+    @DisplayName("소유권 검증에 실패하면 예외가 그대로 전파된다")
+    void getList_ownershipValidationFails_propagatesException() {
+        given(catalystOwnershipValidator.validate(OWNER_ID, CATALYST_ID))
+                .willThrow(new BusinessException(CatalystErrorCode.CATALYST_NOT_FOUND));
+
+        assertThatThrownBy(() -> service().getList(OWNER_ID, CATALYST_ID, "PENDING", null, 7))
+                .isInstanceOf(BusinessException.class)
+                .extracting(e -> ((BusinessException) e).getErrorCode())
+                .isEqualTo(CatalystErrorCode.CATALYST_NOT_FOUND);
+    }
+
+    @Test
     @DisplayName("size개 이하로 조회되면 hasNext는 false이고 nextCursor는 null이다")
     void getList_fewerThanSize_hasNextFalse() {
-        given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst(OWNER_ID)));
+        given(catalystOwnershipValidator.validate(OWNER_ID, CATALYST_ID)).willReturn(catalyst());
         given(signalRepository.findFirstPage(eq(CATALYST_ID), eq(SignalStatus.PENDING), any(Pageable.class)))
                 .willReturn(List.of(signal("https://n.news.naver.com/1")));
 
@@ -68,7 +78,7 @@ class SignalListServiceTest {
     @Test
     @DisplayName("size+1건이 조회되면 hasNext는 true이고 size만큼만 반환하며 nextCursor가 채워진다")
     void getList_moreThanSize_hasNextTrueAndTrimmed() {
-        given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst(OWNER_ID)));
+        given(catalystOwnershipValidator.validate(OWNER_ID, CATALYST_ID)).willReturn(catalyst());
         given(signalRepository.findFirstPage(eq(CATALYST_ID), eq(SignalStatus.PENDING), any(Pageable.class)))
                 .willReturn(List.of(signal("https://n.news.naver.com/1"), signal("https://n.news.naver.com/2")));
 
@@ -82,7 +92,7 @@ class SignalListServiceTest {
     @Test
     @DisplayName("cursor가 있으면 findNextPage로 조회한다")
     void getList_withCursor_usesFindNextPage() {
-        given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst(OWNER_ID)));
+        given(catalystOwnershipValidator.validate(OWNER_ID, CATALYST_ID)).willReturn(catalyst());
         String cursor = SignalCursor.encode(java.time.LocalDateTime.of(2026, 8, 14, 10, 0, 0), 999L);
         given(signalRepository.findNextPage(eq(CATALYST_ID), eq(SignalStatus.PENDING), any(), eq(999L), any(Pageable.class)))
                 .willReturn(List.of());
@@ -93,44 +103,9 @@ class SignalListServiceTest {
     }
 
     @Test
-    @DisplayName("존재하지 않는 catalystId면 CATALYST_NOT_FOUND 예외가 발생한다")
-    void getList_catalystNotFound_throwsCatalystNotFound() {
-        given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.empty());
-
-        assertThatThrownBy(() -> service().getList(OWNER_ID, CATALYST_ID, "PENDING", null, 7))
-                .isInstanceOf(BusinessException.class)
-                .extracting(e -> ((BusinessException) e).getErrorCode())
-                .isEqualTo(CatalystErrorCode.CATALYST_NOT_FOUND);
-    }
-
-    @Test
-    @DisplayName("삭제된 카탈리스트면 CATALYST_NOT_FOUND 예외가 발생한다")
-    void getList_deletedCatalyst_throwsCatalystNotFound() {
-        Catalyst catalyst = catalyst(OWNER_ID);
-        catalyst.softDelete();
-        given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst));
-
-        assertThatThrownBy(() -> service().getList(OWNER_ID, CATALYST_ID, "PENDING", null, 7))
-                .isInstanceOf(BusinessException.class)
-                .extracting(e -> ((BusinessException) e).getErrorCode())
-                .isEqualTo(CatalystErrorCode.CATALYST_NOT_FOUND);
-    }
-
-    @Test
-    @DisplayName("요청자가 소유자가 아니면 CATALYST_ACCESS_DENIED 예외가 발생한다")
-    void getList_notOwner_throwsCatalystAccessDenied() {
-        given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst(2L)));
-
-        assertThatThrownBy(() -> service().getList(OWNER_ID, CATALYST_ID, "PENDING", null, 7))
-                .isInstanceOf(BusinessException.class)
-                .extracting(e -> ((BusinessException) e).getErrorCode())
-                .isEqualTo(CatalystErrorCode.CATALYST_ACCESS_DENIED);
-    }
-
-    @Test
     @DisplayName("status가 ADOPTED면 INVALID_INPUT 예외가 발생한다")
     void getList_statusAdopted_throwsInvalidInput() {
-        given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst(OWNER_ID)));
+        given(catalystOwnershipValidator.validate(OWNER_ID, CATALYST_ID)).willReturn(catalyst());
 
         assertThatThrownBy(() -> service().getList(OWNER_ID, CATALYST_ID, "ADOPTED", null, 7))
                 .isInstanceOf(BusinessException.class)
@@ -141,7 +116,7 @@ class SignalListServiceTest {
     @Test
     @DisplayName("status가 정의된 값이 아니면 INVALID_INPUT 예외가 발생한다")
     void getList_invalidStatus_throwsInvalidInput() {
-        given(catalystRepository.findById(CATALYST_ID)).willReturn(Optional.of(catalyst(OWNER_ID)));
+        given(catalystOwnershipValidator.validate(OWNER_ID, CATALYST_ID)).willReturn(catalyst());
 
         assertThatThrownBy(() -> service().getList(OWNER_ID, CATALYST_ID, "UNKNOWN", null, 7))
                 .isInstanceOf(BusinessException.class)

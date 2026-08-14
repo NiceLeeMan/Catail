@@ -1,8 +1,5 @@
 package com.catail.backend.signal.application;
 
-import com.catail.backend.catalyst.application.CatalystErrorCode;
-import com.catail.backend.catalyst.db.Catalyst;
-import com.catail.backend.catalyst.db.CatalystRepository;
 import com.catail.backend.global.BusinessException;
 import com.catail.backend.global.GlobalErrorCode;
 import com.catail.backend.signal.db.Signal;
@@ -26,12 +23,12 @@ public class SignalListService {
 
     private static final Set<SignalStatus> QUERYABLE_STATUSES = Set.of(SignalStatus.PENDING, SignalStatus.EXCLUDED);
 
-    private final CatalystRepository catalystRepository;
+    private final CatalystOwnershipValidator catalystOwnershipValidator;
     private final SignalRepository signalRepository;
 
     @Transactional(readOnly = true)
     public SignalListResponse getList(Long userId, Long catalystId, String rawStatus, String cursor, int size) {
-        assertOwnership(userId, catalystId);
+        catalystOwnershipValidator.validate(userId, catalystId);
         SignalStatus status = resolveQueryableStatus(rawStatus);
 
         Pageable pageable = PageRequest.of(0, size + 1);
@@ -45,17 +42,6 @@ public class SignalListService {
 
         List<SignalListItem> items = pageItems.stream().map(SignalListItem::from).toList();
         return new SignalListResponse(items, nextCursor, hasNext);
-    }
-
-    private void assertOwnership(Long userId, Long catalystId) {
-        Catalyst catalyst = catalystRepository.findById(catalystId)
-                .orElseThrow(() -> new BusinessException(CatalystErrorCode.CATALYST_NOT_FOUND));
-        if (catalyst.getDeletedAt() != null) {
-            throw new BusinessException(CatalystErrorCode.CATALYST_NOT_FOUND);
-        }
-        if (!catalyst.getUserId().equals(userId)) {
-            throw new BusinessException(CatalystErrorCode.CATALYST_ACCESS_DENIED);
-        }
     }
 
     private SignalStatus resolveQueryableStatus(String rawStatus) {
