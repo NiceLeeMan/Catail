@@ -16,6 +16,8 @@ tags:
     description: 기업별 공시 목록 조회
   - name: 카탈리스트
     description: 카탈리스트 생성 / 조회 / 관리
+  - name: 시그널(검증용)
+    description: 시그널 수집 파이프라인의 검색어 생성 / 네이버 뉴스 수집 단계 검증용 내부 API (인증 불필요, 정식 API 아님)
 
 paths:
   /oauth2/authorization/google:
@@ -448,6 +450,90 @@ paths:
         '404':
           $ref: '#/components/responses/CatalystNotFound'
 
+  /api/internal/signals/search-queries:
+    post:
+      tags:
+        - 시그널(검증용)
+      summary: 시그널 검색어 생성 (검증용)
+      description: |
+        카탈리스트 정보(대상 기업 + 카테고리 + 상세내용)를 입력받아 LLM이 생성한 네이버 뉴스 검색어
+        목록을 반환합니다. 정식 시그널 API가 아니라 검색어 생성 로직을 사람이 직접 눈으로 확인하기
+        위한 내부 전용 엔드포인트이며, 인증이 필요 없고 DB에 아무것도 저장하지 않습니다.
+
+        **오류 케이스**
+        - `companyId`에 해당하는 기업이 없음 → 404
+        - `category`가 정의된 6개 값이 아님 → 400 (GLOBAL_003)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignalSearchQueriesRequest'
+            example:
+              companyId: 1
+              category: SUPPLY_CHAIN
+              detail: HBM 공급망 관련 SK하이닉스 및 주요 파운드리向 계약 동향
+      responses:
+        '200':
+          description: 검색어 생성 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignalSearchQueriesResponse'
+        '400':
+          description: 잘못된 요청 (category가 정의된 값이 아님 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  code: GLOBAL_003
+                  message: 유효하지 않은 입력값입니다
+        '404':
+          $ref: '#/components/responses/CompanyNotFound'
+
+  /api/internal/signals/news-articles:
+    post:
+      tags:
+        - 시그널(검증용)
+      summary: 검색어 기반 네이버 뉴스 수집 (검증용)
+      description: |
+        검색어 목록을 입력받아 네이버 뉴스 검색 API를 검색어별로 병렬 호출한 원본 결과를 반환합니다.
+        HTML 태그 제거, 언론사명 크롤링, 중복 제거 등 NewsArticle 변환은 아직 적용되지 않은 네이버
+        API 원본 응답 그대로입니다. 정식 시그널 API가 아니며 인증이 필요 없고 DB에 아무것도
+        저장하지 않습니다. 검색어 하나가 실패해도(재시도 소진/429 등) 나머지 검색어 결과에는
+        영향을 주지 않으며, 실패한 검색어는 빈 배열로 반환됩니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignalNewsArticlesRequest'
+            example:
+              queries: ["삼성전자 HBM 공급망", "삼성전자 SK하이닉스 HBM 계약"]
+      responses:
+        '200':
+          description: 뉴스 수집 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignalNewsArticlesResponse'
+        '400':
+          description: 잘못된 요청 (queries가 비어있음 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  code: GLOBAL_003
+                  message: 유효하지 않은 입력값입니다
+
 components:
   schemas:
     AccessTokenResponse:
@@ -829,6 +915,94 @@ components:
               items:
                 $ref: '#/components/schemas/CatalystListItem'
               description: 카탈리스트 목록 (생성일시 내림차순)
+        error:
+          type: object
+          nullable: true
+
+    SignalSearchQueriesRequest:
+      type: object
+      required: [companyId, category, detail]
+      properties:
+        companyId:
+          type: integer
+          format: int64
+          description: 대상 기업 ID
+        category:
+          type: string
+          enum: [FINANCIAL_PERFORMANCE, REGULATION_POLICY, SUPPLY_CHAIN, COMPETITIVE_LANDSCAPE, GOVERNANCE, NEW_BUSINESS]
+          description: 카탈리스트 카테고리
+        detail:
+          type: string
+          description: 카탈리스트 상세내용
+
+    SignalSearchQueriesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            queries:
+              type: array
+              items:
+                type: string
+              description: LLM이 생성한 검색어 목록 (최대 10개)
+        error:
+          type: object
+          nullable: true
+
+    SignalNewsArticlesRequest:
+      type: object
+      required: [queries]
+      properties:
+        queries:
+          type: array
+          items:
+            type: string
+          description: 네이버 뉴스를 조회할 검색어 목록
+
+    NaverNewsArticle:
+      type: object
+      properties:
+        title:
+          type: string
+          description: 기사 제목 (HTML 태그 미제거 원본)
+        originallink:
+          type: string
+          description: 언론사 원문 링크 (비어있을 수 있음)
+        link:
+          type: string
+          description: 네이버 뉴스 링크
+        description:
+          type: string
+          description: 기사 요약 (HTML 태그 미제거 원본)
+        pubDate:
+          type: string
+          description: 발행일시 (RFC822 원본 문자열)
+
+    SignalNewsArticlesResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            results:
+              type: array
+              items:
+                type: object
+                properties:
+                  query:
+                    type: string
+                    description: 검색어
+                  articles:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NaverNewsArticle'
         error:
           type: object
           nullable: true
