@@ -564,6 +564,77 @@ paths:
         '404':
           $ref: '#/components/responses/CatalystNotFound'
 
+  /api/signals/{signalId}/status:
+    patch:
+      tags:
+        - 시그널
+      summary: 시그널 상태변경
+      description: |
+        시그널의 채택(ADOPTED)·제외(EXCLUDED)를 전환합니다. 카탈리스트 상태변경 API와 동일한
+        패턴으로, 목적지 상태값만 다른 하나의 API로 처리합니다.
+
+        허용되는 전환: `PENDING → ADOPTED`, `PENDING → EXCLUDED`, `ADOPTED → EXCLUDED`,
+        `EXCLUDED → ADOPTED`. `PENDING`으로 되돌리는 전환은 허용하지 않습니다.
+
+        **오류 케이스**
+        - `signalId`에 해당하는 시그널이 없음 → 404 (SIGNAL_004)
+        - 요청자가 해당 시그널이 속한 카탈리스트의 소유자가 아님 → 403 (CATALYST_003)
+        - 허용되지 않는 전환 경로 요청(예: `PENDING`으로 전환) → 400 (GLOBAL_003)
+        - `status`가 정의된 값이 아님 → 400 (GLOBAL_003)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: signalId
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: 상태를 변경할 시그널 식별자
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SignalStatusChangeRequest'
+            example:
+              status: ADOPTED
+      responses:
+        '200':
+          description: 상태변경 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SignalStatusResponse'
+        '400':
+          description: 잘못된 요청 (허용되지 않는 전환 경로이거나 status가 정의된 값이 아님)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  code: GLOBAL_003
+                  message: 유효하지 않은 입력값입니다
+        '401':
+          $ref: '#/components/responses/Unauthenticated'
+        '403':
+          $ref: '#/components/responses/CatalystAccessDenied'
+        '404':
+          description: 존재하지 않는 시그널
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                success: false
+                data: null
+                error:
+                  code: SIGNAL_004
+                  message: 시그널을 찾을 수 없습니다.
+
   /api/internal/signals/search-queries:
     post:
       tags:
@@ -1193,6 +1264,40 @@ components:
               items:
                 $ref: '#/components/schemas/SignalListItem'
               description: 채택된 시그널 목록 (발행일시 내림차순)
+        error:
+          type: object
+          nullable: true
+
+    SignalStatusChangeRequest:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [ADOPTED, EXCLUDED]
+          description: 전환할 상태
+
+    SignalStatusResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            signalId:
+              type: integer
+              format: int64
+              description: 시그널 식별자
+            status:
+              type: string
+              enum: [PENDING, ADOPTED, EXCLUDED]
+              description: 전환된 상태
+            updatedAt:
+              type: string
+              format: date-time
+              description: 상태 변경 시각
         error:
           type: object
           nullable: true
