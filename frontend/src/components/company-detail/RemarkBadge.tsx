@@ -14,7 +14,7 @@ const REMARK_LABEL_MAP: Record<string, string> = {
 const REMARK_COLOR_MAP: Record<string, string> = {
   정: 'text-[#F59E0B]',
   철회: 'text-[#EF4444]',
-  연: 'text-dark-accent',
+  연: 'text-[#34D399]',
 };
 
 interface RemarkBadgeProps {
@@ -23,11 +23,7 @@ interface RemarkBadgeProps {
 
 export function RemarkBadge({ codes }: RemarkBadgeProps) {
   if (codes.length === 0) {
-    return (
-      <span className="text-[13px] font-normal leading-normal text-dark-text-muted">
-        -
-      </span>
-    );
+    return <span className="text-[13px] font-normal leading-normal text-[#64748B]">-</span>;
   }
 
   return (
@@ -36,7 +32,7 @@ export function RemarkBadge({ codes }: RemarkBadgeProps) {
         <span
           key={code}
           className={`text-[13px] font-normal leading-normal ${
-            REMARK_COLOR_MAP[code] ?? 'text-dark-text-muted'
+            REMARK_COLOR_MAP[code] ?? 'text-[#64748B]'
           }`}
         >
           {REMARK_LABEL_MAP[code] ?? code}
