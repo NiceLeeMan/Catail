@@ -13,6 +13,7 @@ import { DisclosureEmptyState } from '../components/company-detail/DisclosureEmp
 import { DisclosureSyncPendingState } from '../components/company-detail/DisclosureSyncPendingState';
 import { DisclosureListError } from '../components/company-detail/DisclosureListError';
 import { LoadMoreButton } from '../components/company-detail/LoadMoreButton';
+import { CatalystSection } from '../components/company-detail/catalyst/CatalystSection';
 import { useCompanyDetailQuery } from '../hooks/useCompanies';
 import { useDisclosuresQuery } from '../hooks/useDisclosures';
 import { formatDateTime } from '../utils/date';
@@ -113,6 +114,8 @@ export function CompanyDetailPage() {
                 )}
               </>
             )}
+
+            {activeTab === 'catalyst' && <CatalystSection companyId={id} />}
           </>
         )}
       </main>
