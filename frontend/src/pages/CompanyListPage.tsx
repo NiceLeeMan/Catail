@@ -22,7 +22,7 @@ export function CompanyListPage() {
   const debouncedKeyword = useDebouncedValue(keyword, 300);
   const isSearching = debouncedKeyword.trim().length > 0;
 
-  const { data, isLoading, isFetching, isError } = useCompaniesQuery(
+  const { data, isLoading, isFetching, isError, refetch } = useCompaniesQuery(
     market,
     currentPage,
     debouncedKeyword
@@ -44,14 +44,14 @@ export function CompanyListPage() {
   };
 
   return (
-    <div className="box-border flex min-h-screen w-full flex-col items-center bg-dark-bg-base">
+    <div className="box-border flex min-h-screen w-full flex-col items-center bg-[#0B1120]">
       <CompanyPageHeader />
       <HeroBanner />
 
       <main className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-6 px-8 py-9">
-        <div className="box-border flex w-full items-center justify-between">
+        <div className="box-border flex w-full flex-wrap items-center justify-between gap-3">
           <CompanyMarketTabs activeMarket={market} onChange={handleMarketChange} />
-          <span className="text-[14px] font-normal leading-normal text-dark-text-secondary">
+          <span className="text-[14px] font-normal leading-normal text-[#94A3B8]">
             총 {displayedCount}건
           </span>
         </div>
@@ -61,7 +61,7 @@ export function CompanyListPage() {
         {isLoading ? (
           <CompanyListSkeleton />
         ) : isError || !data ? (
-          <CompanyListError />
+          <CompanyListError onRetry={refetch} />
         ) : data.items.length === 0 ? (
           <CompanyEmptyState isSearching={isSearching} />
         ) : (

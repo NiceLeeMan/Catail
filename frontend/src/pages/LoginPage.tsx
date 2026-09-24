@@ -1,3 +1,4 @@
+import { Bell, Building2, Newspaper } from 'lucide-react';
 import logo from '../asset/logo.png';
 import { SocialLoginButton } from '../components/SocialLoginButton';
 
@@ -20,84 +21,67 @@ function GoogleGIcon() {
   );
 }
 
+const PRODUCT_PILLARS = [
+  { icon: Building2, label: '기업 탐색' },
+  { icon: Newspaper, label: '카탈리스트' },
+  { icon: Bell, label: '시그널' },
+];
+
 export function LoginPage() {
   const handleGoogleLogin = () => {
     window.location.href = `${import.meta.env.VITE_API_BASE_URL}/oauth2/authorization/google`;
   };
 
   return (
-    <div className="box-border flex min-h-screen w-full flex-col items-center justify-center gap-0 overflow-hidden bg-bg-base">
-      {/* Login Card */}
+    <div className="relative flex min-h-screen w-full items-center justify-center overflow-hidden bg-[#0B1120] px-6 py-20">
+      {/* Ambient backdrop — CSS-only glow, no imagery */}
       <div
-        className="box-border flex h-[760px] w-[1280px] shrink-0 flex-row items-start justify-start gap-0 overflow-hidden rounded-[28px] bg-bg-surface"
-        style={{ boxShadow: '0px 16px 48px 0px #0E235014' }}
-      >
-        {/* Hero Panel */}
-        <div
-          className="box-border flex h-full flex-1 flex-col items-center justify-center gap-[28px] p-[80px]"
-          style={{
-            backgroundImage:
-              'linear-gradient(-137.191deg, #FFFFFF 14.645%, #E4ECFE 57.071%, #D4F7F0 85.355%)',
-            backgroundRepeat: 'no-repeat',
-            backgroundSize: '100% 100%',
-          }}
-        >
-          {/* Logo Lockup */}
-          <div className="box-border flex h-fit w-fit shrink-0 flex-col items-center justify-start gap-[20px]">
-            <img
-              src={logo}
-              alt="Catail 로고"
-              className="box-border h-[160px] w-[160px] shrink-0 rounded-[20px] object-contain"
-            />
-            {/* Logo Wordmark — gradient text */}
-            <span
-              className="box-border whitespace-nowrap text-left text-[52px] font-extrabold leading-normal"
-              style={{
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                backgroundClip: 'text',
-                backgroundImage:
-                  'linear-gradient(0deg, #0A1F5C 0%, #1F56E6 50%, #00D4B4 100%)',
-                backgroundRepeat: 'no-repeat',
-                backgroundSize: '100% 100%',
-                color: 'transparent',
-              }}
-            >
-              Catail
-            </span>
-          </div>
-          {/* Hero Tagline */}
-          <p className="box-border w-[420px] text-center text-[16px] font-medium leading-normal text-text-secondary">
-            관심 산업의 변화를, 놓치지 않고 추적하다
-          </p>
-        </div>
+        aria-hidden="true"
+        className="pointer-events-none absolute left-1/2 top-[-160px] h-[520px] w-[720px] -translate-x-1/2 rounded-full bg-[#10B981]/[0.12] blur-[150px]"
+      />
 
-        {/* Auth Panel */}
-        <div className="box-border flex h-full w-[576px] shrink-0 flex-col items-center justify-center gap-[40px] bg-bg-surface p-[64px]">
-          {/* Text Block */}
-          <div className="box-border flex h-fit w-full shrink-0 flex-col items-start justify-start gap-[10px]">
-            <h1 className="box-border w-full text-left text-[30px] font-extrabold leading-normal text-text-primary">
-              Catail에 오신 것을 환영합니다
-            </h1>
-            <p className="box-border w-full text-left text-[14px] font-normal leading-[21px] text-text-secondary">
-              관심 기업의 공시와 변화를 놓치지 않고 추적해보세요
+      {/* Content */}
+      <div className="relative z-10 flex w-full max-w-[380px] flex-col items-center gap-8 animate-[fade-up_0.6s_ease-out_both]">
+        {/* Brand */}
+        <div className="flex flex-col items-center gap-3">
+          <img src={logo} alt="Catail 로고" className="h-20 w-20 shrink-0 object-contain" />
+          <div className="flex flex-col items-center gap-1.5">
+            <span className="text-[22px] font-extrabold leading-normal text-[#34D399]">Catail</span>
+            <p className="text-center text-[13px] font-medium leading-normal text-[#94A3B8]">
+              관심 기업의 공시와 시그널을, 놓치지 않고
             </p>
           </div>
+        </div>
 
-          {/* Action Block */}
-          <div className="box-border flex h-fit w-full shrink-0 flex-col items-start justify-start gap-[12px]">
+        {/* Auth Card */}
+        <div className="box-border flex w-full flex-col items-center gap-6 rounded-2xl border border-white/[0.08] bg-[#131B2E] p-8 shadow-[0_20px_60px_rgba(0,0,0,0.45)]">
+          <h1 className="text-center text-[15px] font-medium leading-normal text-[#94A3B8]">
+            Google 계정으로 바로 시작하세요
+          </h1>
+
+          <div className="flex w-full flex-col items-center gap-3">
             <SocialLoginButton
               provider="google"
               label="Google로 계속하기"
               icon={<GoogleGIcon />}
               onClick={handleGoogleLogin}
             />
-            <p className="box-border w-full text-center text-[12px] font-normal leading-normal text-text-muted">
-              다른 로그인 수단은 추후 추가될 예정입니다
-            </p>
           </div>
+        </div>
+
+        {/* Product pillars */}
+        <div className="grid w-full grid-cols-3 gap-2">
+          {PRODUCT_PILLARS.map(({ icon: Icon, label }) => (
+            <div
+              key={label}
+              className="flex flex-col items-center gap-2 rounded-xl border border-white/[0.08] bg-[#0F1729] px-3 py-4"
+            >
+              <Icon className="h-5 w-5 text-[#34D399]" aria-hidden="true" />
+              <span className="text-[12px] font-medium leading-normal text-[#94A3B8]">{label}</span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
-  )
+  );
 }

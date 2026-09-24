@@ -30,19 +30,15 @@ function CompanyAvatar({ company }: { company: CompanyListItemResponse }) {
   );
 }
 
+const ROW_GRID = 'grid grid-cols-[1fr_88px_20px] items-center gap-4 md:grid-cols-[1fr_140px_160px_20px] md:gap-5';
+
 export function CompanyTable({ items, onRowClick }: CompanyTableProps) {
   return (
-    <div className="box-border w-full shrink-0 overflow-hidden rounded-xl border border-dark-border bg-dark-bg-card shadow-card">
-      <div className="box-border flex w-full items-center gap-5 border-b border-dark-border bg-dark-bg-card-header px-7 py-3.5">
-        <div className="w-[340px] shrink-0 text-[13px] font-bold leading-normal text-dark-text-secondary">
-          기업
-        </div>
-        <div className="w-[150px] shrink-0 text-[13px] font-bold leading-normal text-dark-text-secondary">
-          종목코드
-        </div>
-        <div className="flex-1 text-[13px] font-bold leading-normal text-dark-text-secondary">
-          업종
-        </div>
+    <div className="box-border w-full shrink-0 overflow-hidden rounded-xl border border-white/[0.08] bg-[#131B2E] shadow-[0_2px_10px_rgba(0,0,0,0.25)]">
+      <div className={`box-border w-full border-b border-white/[0.08] bg-[#182338] px-5 py-3.5 md:px-7 ${ROW_GRID}`}>
+        <div className="text-[13px] font-bold leading-normal text-[#94A3B8]">기업</div>
+        <div className="text-[13px] font-bold leading-normal text-[#94A3B8]">종목코드</div>
+        <div className="hidden text-[13px] font-bold leading-normal text-[#94A3B8] md:block">업종</div>
         <div className="h-[18px] w-[18px] shrink-0" />
       </div>
 
@@ -51,21 +47,21 @@ export function CompanyTable({ items, onRowClick }: CompanyTableProps) {
           key={company.id}
           type="button"
           onClick={() => onRowClick(company)}
-          className="group box-border flex h-16 w-full shrink-0 items-center gap-5 border-b border-dark-border px-7 text-left transition-colors duration-150 last:border-b-0 hover:bg-dark-bg-card-header"
+          className={`group box-border w-full border-b border-white/[0.08] px-5 py-4 text-left transition-colors duration-150 last:border-b-0 hover:bg-[#182338] focus-visible:bg-[#182338] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#34D399] md:px-7 md:py-0 md:h-16 ${ROW_GRID}`}
         >
-          <div className="flex w-[340px] shrink-0 items-center gap-3.5">
+          <div className="flex min-w-0 items-center gap-3.5">
             <CompanyAvatar company={company} />
-            <span className="flex-1 truncate text-[15px] font-semibold leading-normal text-dark-text-primary">
+            <span className="flex-1 truncate text-[15px] font-semibold leading-normal text-[#F1F5F9]">
               {company.companyName}
             </span>
           </div>
-          <div className="w-[150px] shrink-0 text-[14px] font-normal leading-normal text-dark-text-secondary">
+          <div className="truncate text-[14px] font-normal leading-normal text-[#94A3B8]">
             {company.stockCode}
           </div>
-          <div className="flex-1 text-[14px] font-normal leading-normal text-dark-text-secondary">
+          <div className="hidden truncate text-[14px] font-normal leading-normal text-[#94A3B8] md:block">
             {company.industryName ?? '-'}
           </div>
-          <ChevronRight className="h-[18px] w-[18px] shrink-0 text-dark-text-muted transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-dark-text-secondary" />
+          <ChevronRight className="h-[18px] w-[18px] shrink-0 text-[#64748B] transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-[#94A3B8]" />
         </button>
       ))}
     </div>

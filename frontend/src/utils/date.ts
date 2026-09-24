@@ -12,3 +12,10 @@ export function formatDateTime(iso: string): string {
   const mi = String(date.getMinutes()).padStart(2, '0');
   return `${formatDate(iso)} ${hh}:${mi}`;
 }
+
+export function formatTime(iso: string): string {
+  const date = new Date(iso);
+  const hh = String(date.getHours()).padStart(2, '0');
+  const mi = String(date.getMinutes()).padStart(2, '0');
+  return `${hh}:${mi}`;
+}

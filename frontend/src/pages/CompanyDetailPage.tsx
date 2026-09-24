@@ -13,6 +13,9 @@ import { DisclosureEmptyState } from '../components/company-detail/DisclosureEmp
 import { DisclosureSyncPendingState } from '../components/company-detail/DisclosureSyncPendingState';
 import { DisclosureListError } from '../components/company-detail/DisclosureListError';
 import { LoadMoreButton } from '../components/company-detail/LoadMoreButton';
+import { CatalystSection } from '../components/company-detail/catalyst/CatalystSection';
+import { SignalSection } from '../components/company-detail/signal/SignalSection';
+import { SignalTimelineSection } from '../components/company-detail/signal/SignalTimelineSection';
 import { useCompanyDetailQuery } from '../hooks/useCompanies';
 import { useDisclosuresQuery } from '../hooks/useDisclosures';
 import { formatDateTime } from '../utils/date';
@@ -30,10 +33,10 @@ export function CompanyDetailPage() {
 
   if (isInvalidId) {
     return (
-      <div className="box-border flex min-h-screen w-full flex-col items-center bg-dark-bg-base">
+      <div className="box-border flex min-h-screen w-full flex-col items-center bg-[#0B1120]">
         <CompanyPageHeader />
         <main className="mx-auto box-border flex w-full max-w-[1280px] items-center justify-center px-8 py-24">
-          <p className="text-[14px] font-medium leading-normal text-dark-text-secondary">
+          <p className="text-[14px] font-medium leading-normal text-[#94A3B8]">
             기업을 찾을 수 없습니다.
           </p>
         </main>
@@ -46,14 +49,14 @@ export function CompanyDetailPage() {
   const lastDisclosurePage = disclosurePages.at(-1);
 
   return (
-    <div className="box-border flex min-h-screen w-full flex-col items-center bg-dark-bg-base">
+    <div className="box-border flex min-h-screen w-full flex-col items-center bg-[#0B1120]">
       <CompanyPageHeader />
 
       <main className="mx-auto box-border flex w-full max-w-[1280px] flex-col gap-5 px-8 py-9">
         <button
           type="button"
           onClick={() => navigate('/companies')}
-          className="box-border flex w-fit shrink-0 items-center gap-1.5 text-[14px] font-normal leading-normal text-dark-text-secondary hover:text-dark-text-primary"
+          className="box-border flex w-fit shrink-0 items-center gap-1.5 text-[14px] font-normal leading-normal text-[#94A3B8] transition-colors duration-150 hover:text-[#F1F5F9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34D399] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0B1120]"
         >
           <ArrowLeft className="h-4 w-4" />
           기업 목록으로
@@ -62,10 +65,20 @@ export function CompanyDetailPage() {
         {companyQuery.isLoading ? (
           <CompanyListSkeleton />
         ) : companyQuery.isError || !companyQuery.data ? (
-          <div className="flex w-full flex-col items-center justify-center gap-2 py-24 text-center">
-            <p className="text-[14px] font-medium leading-normal text-dark-text-secondary">
+          <div
+            role="alert"
+            className="flex w-full flex-col items-center justify-center gap-4 rounded-2xl border border-white/[0.08] bg-[#131B2E] py-24 text-center"
+          >
+            <p className="text-[14px] font-medium leading-normal text-[#94A3B8]">
               기업 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
             </p>
+            <button
+              type="button"
+              onClick={() => companyQuery.refetch()}
+              className="box-border cursor-pointer rounded-lg border border-white/[0.08] bg-[#0F1729] px-4 py-2 text-[13px] font-semibold leading-normal text-[#F1F5F9] transition-colors duration-150 hover:bg-[#182338] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#34D399]"
+            >
+              다시 시도
+            </button>
           </div>
         ) : (
           <>
@@ -78,7 +91,7 @@ export function CompanyDetailPage() {
                 {disclosuresQuery.isLoading ? (
                   <CompanyListSkeleton />
                 ) : disclosuresQuery.isError ? (
-                  <DisclosureListError />
+                  <DisclosureListError onRetry={() => disclosuresQuery.refetch()} />
                 ) : disclosureItems.length === 0 ? (
                   lastDisclosurePage?.initialSyncCompleted ? (
                     <DisclosureEmptyState />
@@ -97,12 +110,18 @@ export function CompanyDetailPage() {
                 )}
 
                 {lastDisclosurePage?.lastSyncedAt && (
-                  <p className="text-[13px] font-normal leading-normal text-dark-text-muted">
+                  <p className="text-[13px] font-normal leading-normal text-[#64748B]">
                     마지막 동기화: {formatDateTime(lastDisclosurePage.lastSyncedAt)}
                   </p>
                 )}
               </>
             )}
+
+            {activeTab === 'catalyst' && <CatalystSection companyId={id} />}
+
+            {activeTab === 'signal' && <SignalSection companyId={id} />}
+
+            {activeTab === 'timeline' && <SignalTimelineSection companyId={id} />}
           </>
         )}
       </main>
